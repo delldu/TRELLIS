@@ -7,7 +7,7 @@ from ...modules import sparse as sp
 from .base import SparseTransformerBase
 from ...representations import Strivec
 from ..sparse_elastic_mixin import SparseTransformerElasticMixin
-
+import pdb
 
 class SLatRadianceFieldDecoder(SparseTransformerBase):
     def __init__(
@@ -41,6 +41,21 @@ class SLatRadianceFieldDecoder(SparseTransformerBase):
             use_checkpoint=use_checkpoint,
             qk_rms_norm=qk_rms_norm,
         )
+        assert resolution == 64
+        assert model_channels == 768
+        assert latent_channels == 8
+        assert num_blocks == 12
+        assert num_heads == 12
+        assert num_head_channels == 64
+        assert mlp_ratio == 4
+        assert attn_mode == 'swin'
+        assert window_size == 8
+        assert pe_mode == 'ape'
+        assert use_fp16 == True
+        assert use_checkpoint == False
+        assert qk_rms_norm == False
+        assert representation_config == {'rank': 16, 'dim': 8}
+
         self.resolution = resolution
         self.rep_config = representation_config
         self._calc_layout()

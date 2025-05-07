@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 from . import SparseTensor
 from . import DEBUG
+import pdb
 
 __all__ = [
     'SparseGroupNorm',

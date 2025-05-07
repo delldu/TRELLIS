@@ -5,7 +5,7 @@ from ...modules.utils import convert_module_to_f16, convert_module_to_f32
 from ...modules import sparse as sp
 from ...modules.transformer import AbsolutePositionEmbedder
 from ...modules.sparse.transformer import SparseTransformerBlock
-
+import pdb
 
 def block_attn_config(self):
     """
@@ -45,6 +45,19 @@ class SparseTransformerBase(nn.Module):
         qk_rms_norm: bool = False,
     ):
         super().__init__()
+        assert in_channels == 8
+        assert model_channels == 768
+        assert num_blocks == 12
+        assert num_heads == 12
+        assert num_head_channels == 64
+        assert mlp_ratio == 4
+        assert attn_mode == 'swin'
+        assert window_size == 8
+        assert pe_mode == 'ape'
+        assert use_fp16 == True
+        assert use_checkpoint == False
+        assert qk_rms_norm == False
+
         self.in_channels = in_channels
         self.model_channels = model_channels
         self.num_blocks = num_blocks
@@ -108,10 +121,11 @@ class SparseTransformerBase(nn.Module):
         self.apply(_basic_init)
 
     def forward(self, x: sp.SparseTensor) -> sp.SparseTensor:
-        h = self.input_layer(x)
-        if self.pe_mode == "ape":
-            h = h + self.pos_embedder(x.coords[:, 1:])
-        h = h.type(self.dtype)
+        h2 = self.input_layer.float()(x)
+        if self.pe_mode == "ape": # True
+            h2 = h2 + self.pos_embedder(x.coords[:, 1:])
+        h2 = h2.type(self.dtype)
         for block in self.blocks:
-            h = block(h)
-        return h
+            h2 = block(h2)
+
+        return h2

@@ -63,10 +63,10 @@ class SparseTransformerBlock(nn.Module):
         )
 
     def _forward(self, x: SparseTensor) -> SparseTensor:
-        h = x.replace(self.norm1(x.feats))
+        h = x.replace(self.norm1.float()(x.feats)) # xxxx_debug
         h = self.attn(h)
         x = x + h
-        h = x.replace(self.norm2(x.feats))
+        h = x.replace(self.norm2.float()(x.feats)) # xxxx_debug
         h = self.mlp(h)
         x = x + h
         return x

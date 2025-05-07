@@ -8,7 +8,7 @@ from ..renderers import OctreeRenderer, GaussianRenderer, MeshRenderer
 from ..representations import Octree, Gaussian, MeshExtractResult
 from ..modules import sparse as sp
 from .random_utils import sphere_hammersley_sequence
-
+import pdb
 
 def yaw_pitch_r_fov_to_extrinsics_intrinsics(yaws, pitchs, rs, fovs):
     is_list = isinstance(yaws, list)
@@ -30,7 +30,10 @@ def yaw_pitch_r_fov_to_extrinsics_intrinsics(yaws, pitchs, rs, fovs):
             torch.cos(yaw) * torch.cos(pitch),
             torch.sin(pitch),
         ]).cuda() * r
+        # pdb.set_trace()
+
         extr = utils3d.torch.extrinsics_look_at(orig, torch.tensor([0, 0, 0]).float().cuda(), torch.tensor([0, 0, 1]).float().cuda())
+
         intr = utils3d.torch.intrinsics_from_fov_xy(fov, fov)
         extrinsics.append(extr)
         intrinsics.append(intr)

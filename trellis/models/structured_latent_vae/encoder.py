@@ -5,7 +5,7 @@ import torch.nn.functional as F
 from ...modules import sparse as sp
 from .base import SparseTransformerBase
 from ..sparse_elastic_mixin import SparseTransformerElasticMixin
-
+import pdb
 
 class SLatEncoder(SparseTransformerBase):
     def __init__(
@@ -45,6 +45,7 @@ class SLatEncoder(SparseTransformerBase):
         self.initialize_weights()
         if use_fp16:
             self.convert_to_fp16()
+        # pdb.set_trace()
 
     def initialize_weights(self) -> None:
         super().initialize_weights()

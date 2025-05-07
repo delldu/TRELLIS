@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 from .. import SparseTensor
-
+import pdb
 
 class SparseConv3d(nn.Module):
     def __init__(self, in_channels, out_channels, kernel_size, stride=1, dilation=1, bias=True, indice_key=None):

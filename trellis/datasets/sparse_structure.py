@@ -9,7 +9,7 @@ import utils3d
 from .components import StandardDatasetBase
 from ..representations.octree import DfsOctree as Octree
 from ..renderers import OctreeRenderer
-
+import pdb
 
 class SparseStructure(StandardDatasetBase):
     """
@@ -83,6 +83,8 @@ class SparseStructure(StandardDatasetBase):
         
         # Build each representation
         ss = ss.cuda()
+        pdb.set_trace()
+
         for i in range(ss.shape[0]):
             representation = Octree(
                 depth=10,

@@ -70,13 +70,25 @@ def render(viewpoint_camera, pc : Gaussian, pipe, bg_color : torch.Tensor, scali
     kernel_size = pipe.kernel_size
     subpixel_offset = torch.zeros((int(viewpoint_camera.image_height), int(viewpoint_camera.image_width), 2), dtype=torch.float32, device="cuda")
 
+    # image_height: int
+    # image_width: int 
+    # tanfovx : float
+    # tanfovy : float
+    # bg : torch.Tensor
+    # scale_modifier : float
+    # viewmatrix : torch.Tensor
+    # projmatrix : torch.Tensor
+    # sh_degree : int
+    # campos : torch.Tensor
+    # prefiltered : bool
+    # debug : bool
     raster_settings = GaussianRasterizationSettings(
         image_height=int(viewpoint_camera.image_height),
         image_width=int(viewpoint_camera.image_width),
         tanfovx=tanfovx,
         tanfovy=tanfovy,
-        kernel_size=kernel_size,
-        subpixel_offset=subpixel_offset,
+        # kernel_size=kernel_size,
+        # subpixel_offset=subpixel_offset,
         bg=bg_color,
         scale_modifier=scaling_modifier,
         viewmatrix=viewpoint_camera.world_view_transform,

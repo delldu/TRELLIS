@@ -29,13 +29,18 @@ class ImageConditionedMixin:
             super(ImageConditionedMixin, ImageConditionedMixin).prepare_for_training(**kwargs)
         # download the model
         torch.hub.load('facebookresearch/dinov2', image_cond_model, pretrained=True)
+        # dinov2_model = torch.hub.load('/home/dell/.cache/torch/hub/facebookresearch_dinov2_main', 
+        #     name, pretrained=True, trust_repo=True, source='local')
         
     def _init_image_cond_model(self):
         """
         Initialize the image conditioning model.
         """
-        with dist_utils.local_master_first():
-            dinov2_model = torch.hub.load('facebookresearch/dinov2', self.image_cond_model_name, pretrained=True)
+        # with dist_utils.local_master_first():
+        #     dinov2_model = torch.hub.load('facebookresearch/dinov2', self.image_cond_model_name, pretrained=True)
+        dinov2_model = torch.hub.load('/home/dell/.cache/torch/hub/facebookresearch_dinov2_main', 
+            name, pretrained=True, trust_repo=True, source='local')
+        
         dinov2_model.eval().cuda()
         transform = transforms.Compose([
             transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),

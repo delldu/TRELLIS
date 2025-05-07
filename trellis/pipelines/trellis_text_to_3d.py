@@ -157,7 +157,7 @@ class TrellisTextTo3DPipeline(Pipeline):
         """
         ret = {}
         if 'mesh' in formats:
-            ret['mesh'] = self.models['slat_decoder_mesh'](slat)
+            ret['mesh'] = self.models['slat_decoder_mesh'](slat) # SLatMeshDecoder
         if 'gaussian' in formats:
             ret['gaussian'] = self.models['slat_decoder_gs'](slat)
         if 'radiance_field' in formats:

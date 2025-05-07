@@ -6,7 +6,8 @@ import numpy as np
 from ..modules.utils import convert_module_to_f16, convert_module_to_f32
 from ..modules.transformer import AbsolutePositionEmbedder, ModulatedTransformerCrossBlock
 from ..modules.spatial import patchify, unpatchify
-
+import todos
+import pdb
 
 class TimestepEmbedder(nn.Module):
     """
@@ -73,6 +74,23 @@ class SparseStructureFlowModel(nn.Module):
         qk_rms_norm_cross: bool = False,
     ):
         super().__init__()
+        assert resolution == 16
+        assert in_channels == 8
+        assert model_channels == 1024
+        assert cond_channels == 1024
+        assert out_channels == 8
+        assert num_blocks == 24
+        assert num_heads == 16
+        assert num_head_channels == 64
+        assert mlp_ratio == 4
+        assert patch_size == 1
+        assert pe_mode == 'ape'
+        assert use_fp16 == True
+        assert use_checkpoint == False
+        assert share_mod == False
+        assert qk_rms_norm == True
+        assert qk_rms_norm_cross == False
+
         self.resolution = resolution
         self.in_channels = in_channels
         self.model_channels = model_channels
@@ -177,24 +195,26 @@ class SparseStructureFlowModel(nn.Module):
         assert [*x.shape] == [x.shape[0], self.in_channels, *[self.resolution] * 3], \
                 f"Input shape mismatch, got {x.shape}, expected {[x.shape[0], self.in_channels, *[self.resolution] * 3]}"
 
-        h = patchify(x, self.patch_size)
-        h = h.view(*h.shape[:2], -1).permute(0, 2, 1).contiguous()
+        h2 = patchify(x, self.patch_size)
+        h2 = h2.view(*h2.shape[:2], -1).permute(0, 2, 1).contiguous()
+        h2 = self.input_layer(h2.type(self.dtype)) # xxxx_debug
+        h2 = h2 + self.pos_emb[None] # cuda, half float ...
 
-        h = self.input_layer(h)
-        h = h + self.pos_emb[None]
-        t_emb = self.t_embedder(t)
-        if self.share_mod:
+        t_emb = self.t_embedder.float()(t)
+        if self.share_mod: # False
             t_emb = self.adaLN_modulation(t_emb)
         t_emb = t_emb.type(self.dtype)
-        h = h.type(self.dtype)
+        h2 = h2.type(self.dtype)
         cond = cond.type(self.dtype)
         for block in self.blocks:
-            h = block(h, t_emb, cond)
-        h = h.type(x.dtype)
-        h = F.layer_norm(h, h.shape[-1:])
-        h = self.out_layer(h)
+            h2 = block.float()(h2.float(), t_emb.float(), cond.float()).type(self.dtype)
+        # for block in self.blocks: h2 = block.float()(h2.float(), t_emb.float(), cond.float()).type(self.dtype)
 
-        h = h.permute(0, 2, 1).view(h.shape[0], h.shape[2], *[self.resolution // self.patch_size] * 3)
-        h = unpatchify(h, self.patch_size).contiguous()
+        h2 = h2.type(x.dtype)
+        h2 = F.layer_norm(h2, h2.shape[-1:])
+        h2 = self.out_layer(h2.type(self.dtype)) # xxxx_debug
 
-        return h
+        h2 = h2.permute(0, 2, 1).view(h2.shape[0], h2.shape[2], *[self.resolution // self.patch_size] * 3)
+        h2 = unpatchify(h2, self.patch_size).contiguous()
+
+        return h2

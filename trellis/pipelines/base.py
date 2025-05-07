@@ -2,7 +2,7 @@ from typing import *
 import torch
 import torch.nn as nn
 from .. import models
-
+import pdb
 
 class Pipeline:
     """
@@ -36,12 +36,25 @@ class Pipeline:
         with open(config_file, 'r') as f:
             args = json.load(f)['args']
 
+        # sparse_structure_decoder ===> ckpts/ss_dec_conv3d_16l8_fp16
+        # sparse_structure_flow_model ===> ckpts/ss_flow_img_dit_L_16l8_fp16
+        # slat_decoder_gs ===> ckpts/slat_dec_gs_swin8_B_64l8gs32_fp16
+        # slat_decoder_rf ===> ckpts/slat_dec_rf_swin8_B_64l8r16_fp16
+        # slat_decoder_mesh ===> ckpts/slat_dec_mesh_swin8_B_64l8m256c_fp16, SLatMeshDecoder
+        # slat_flow_model ===> ckpts/slat_flow_img_dit_L_64l8p2_fp16
+
         _models = {}
         for k, v in args['models'].items():
+            print(k, "====>", f"{path}/{v} ...")
             try:
                 _models[k] = models.from_pretrained(f"{path}/{v}")
+                print(k, "====>", f"{path}/{v} ... OK")
             except:
-                _models[k] = models.from_pretrained(v)
+                print(k, "====>", f"{path}/{v} ... NOK")
+                # _models[k] = models.from_pretrained(v)
+                # pdb.set_trace()
+
+            # print("-" * 80)
 
         new_pipeline = Pipeline(_models)
         new_pipeline._pretrained_args = args

@@ -3,10 +3,19 @@ import torch.nn as nn
 from .. import SparseTensor
 from .. import DEBUG
 from . import SPCONV_ALGO
+import pdb
 
 class SparseConv3d(nn.Module):
     def __init__(self, in_channels, out_channels, kernel_size, stride=1, dilation=1, padding=None, bias=True, indice_key=None):
         super(SparseConv3d, self).__init__()
+        # in_channels = 768
+        # out_channels = 192
+        # kernel_size = 3
+        # stride = 1
+        # dilation = 1
+        # padding = None
+        # bias = True
+        # indice_key = 'res_128'
         if 'spconv' not in globals():
             import spconv.pytorch as spconv
         algo = None
@@ -23,7 +32,9 @@ class SparseConv3d(nn.Module):
 
     def forward(self, x: SparseTensor) -> SparseTensor:
         spatial_changed = any(s != 1 for s in self.stride) or (self.padding is not None)
+        # pdb.set_trace()
         new_data = self.conv(x.data)
+
         new_shape = [x.shape[0], self.conv.out_channels]
         new_layout = None if spatial_changed else x.layout
 

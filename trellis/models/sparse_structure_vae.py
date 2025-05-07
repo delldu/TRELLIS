@@ -5,7 +5,7 @@ import torch.nn.functional as F
 from ..modules.norm import GroupNorm32, ChannelLayerNorm32
 from ..modules.spatial import pixel_shuffle_3d
 from ..modules.utils import zero_module, convert_module_to_f16, convert_module_to_f32
-
+import pdb
 
 def norm_layer(norm_type: str, *args, **kwargs) -> nn.Module:
     """
@@ -37,14 +37,16 @@ class ResBlock3d(nn.Module):
         self.skip_connection = nn.Conv3d(channels, self.out_channels, 1) if channels != self.out_channels else nn.Identity()
     
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        h = self.norm1(x)
-        h = F.silu(h)
-        h = self.conv1(h)
-        h = self.norm2(h)
-        h = F.silu(h)
-        h = self.conv2(h)
-        h = h + self.skip_connection(x)
-        return h
+
+        h2 = self.norm1.float()(x.float())
+        h2 = F.silu(h2)
+        h2 = self.conv1(h2.type(x.dtype))
+        h2 = self.norm2.float()(h2.float())
+        h2 = F.silu(h2)
+        h2 = self.conv2(h2.type(x.dtype))
+        h2 = h2 + self.skip_connection(x)
+
+        return h2.type(x.dtype)
 
 
 class DownsampleBlock3d(nn.Module):
@@ -231,6 +233,14 @@ class SparseStructureDecoder(nn.Module):
         use_fp16: bool = False,
     ):
         super().__init__()
+        assert out_channels == 1
+        assert latent_channels == 8
+        assert num_res_blocks == 2
+        assert channels == [512, 128, 32]
+        assert num_res_blocks_middle == 2
+        assert norm_type == 'layer'
+        assert use_fp16 == True
+
         self.out_channels = out_channels
         self.latent_channels = latent_channels
         self.num_res_blocks = num_res_blocks
@@ -293,14 +303,15 @@ class SparseStructureDecoder(nn.Module):
         self.middle_block.apply(convert_module_to_f32)
     
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        h = self.input_layer(x)
+        h2 = self.input_layer(x.type(self.dtype))
         
-        h = h.type(self.dtype)
-                
-        h = self.middle_block(h)
-        for block in self.blocks:
-            h = block(h)
+        h2 = h2.type(self.dtype)
+        h2 = self.middle_block(h2) # self.middle_block -- device='cuda:0', dtype=torch.float16
 
-        h = h.type(x.dtype)
-        h = self.out_layer(h)
-        return h
+        for block in self.blocks:
+            h2 = block(h2)
+
+        h2 = h2.type(x.dtype)
+        h2 = self.out_layer.float()(h2.float())
+
+        return h2.type(x.dtype)

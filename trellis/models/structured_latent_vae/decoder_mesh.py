@@ -6,10 +6,11 @@ import numpy as np
 from ...modules.utils import zero_module, convert_module_to_f16, convert_module_to_f32
 from ...modules import sparse as sp
 from .base import SparseTransformerBase
-from ...representations import MeshExtractResult
 from ...representations.mesh import SparseFeatures2Mesh
 from ..sparse_elastic_mixin import SparseTransformerElasticMixin
+from typing import List, Optional 
 
+import pdb
 
 class SparseSubdivideBlock3d(nn.Module):
     """
@@ -28,13 +29,18 @@ class SparseSubdivideBlock3d(nn.Module):
         num_groups: int = 32
     ):
         super().__init__()
+        # channels = 768
+        # resolution = 64
+        # out_channels = 192
+        # num_groups = 32
         self.channels = channels
         self.resolution = resolution
         self.out_resolution = resolution * 2
         self.out_channels = out_channels or channels
 
+        # sp.norm.SparseGroupNorm32(num_groups, channels)
         self.act_layers = nn.Sequential(
-            sp.SparseGroupNorm32(num_groups, channels),
+            sp.SparseGroupNorm32(num_groups, channels), # (32, 768)
             sp.SparseSiLU()
         )
         
@@ -61,12 +67,14 @@ class SparseSubdivideBlock3d(nn.Module):
         Returns:
             an [N x C x ...] Tensor of outputs.
         """
-        h = self.act_layers(x)
-        h = self.sub(h)
+
+        h2 = self.act_layers.float()(x) # SparseGroupNorm32
+        h2 = self.sub(h2)
         x = self.sub(x)
-        h = self.out_layers(h)
-        h = h + self.skip_connection(x)
-        return h
+        h2 = self.out_layers.float()(h2.float())
+        h2 = h2 + self.skip_connection(x)
+
+        return h2
 
 
 class SLatMeshDecoder(SparseTransformerBase):
@@ -101,15 +109,50 @@ class SLatMeshDecoder(SparseTransformerBase):
             use_checkpoint=use_checkpoint,
             qk_rms_norm=qk_rms_norm,
         )
+        assert resolution == 64
+        assert model_channels == 768
+        assert latent_channels == 8
+        assert num_blocks == 12
+        assert num_heads == 12
+        assert num_head_channels == 64
+        assert mlp_ratio == 4
+        assert attn_mode == 'swin'
+        assert window_size == 8
+        assert pe_mode == 'ape'
+        assert use_fp16 == True
+        assert use_checkpoint == False
+        assert qk_rms_norm == False
+        # representation_config = {'use_color': True}
+
+        # (Pdb) pp config['args']
+        # {'attn_mode': 'swin',
+        #  'latent_channels': 8,
+        #  'mlp_ratio': 4,
+        #  'model_channels': 768,
+        #  'num_blocks': 12,
+        #  'num_heads': 12,
+        #  'representation_config': {'use_color': True},
+        #  'resolution': 64,
+        #  'use_fp16': True,
+        #  'window_size': 8}
+
         self.resolution = resolution
         self.rep_config = representation_config
+
         self.mesh_extractor = SparseFeatures2Mesh(res=self.resolution*4, use_color=self.rep_config.get('use_color', False))
         self.out_channels = self.mesh_extractor.feats_channels
+        # for test: model = SparseSubdivideBlock3d(channels=768, resolution=64, out_channels=192, num_groups=32)
+
+        # channels: int,
+        # resolution: int,
+        # out_channels: Optional[int] = None,
+        # num_groups: int = 32
+
         self.upsample = nn.ModuleList([
             SparseSubdivideBlock3d(
-                channels=model_channels,
-                resolution=resolution,
-                out_channels=model_channels // 4
+                channels=model_channels, # 768
+                resolution=resolution, # 64
+                out_channels=model_channels // 4 # 192
             ),
             SparseSubdivideBlock3d(
                 channels=model_channels // 4,
@@ -131,19 +174,19 @@ class SLatMeshDecoder(SparseTransformerBase):
 
     def convert_to_fp16(self) -> None:
         """
-        Convert the torso of the model to float16.
+        Convert the torsor of the model to float16.
         """
         super().convert_to_fp16()
         self.upsample.apply(convert_module_to_f16)
 
     def convert_to_fp32(self) -> None:
         """
-        Convert the torso of the model to float32.
+        Convert the torsor of the model to float32.
         """
         super().convert_to_fp32()
         self.upsample.apply(convert_module_to_f32)  
     
-    def to_representation(self, x: sp.SparseTensor) -> List[MeshExtractResult]:
+    def to_representation(self, x: sp.SparseTensor):
         """
         Convert a batch of network outputs to 3D representations.
 
@@ -159,13 +202,17 @@ class SLatMeshDecoder(SparseTransformerBase):
             ret.append(mesh)
         return ret
 
-    def forward(self, x: sp.SparseTensor) -> List[MeshExtractResult]:
-        h = super().forward(x)
-        for block in self.upsample:
-            h = block(h)
-        h = h.type(x.dtype)
-        h = self.out_layer(h)
-        return self.to_representation(h)
+    def forward(self, x: sp.SparseTensor):
+        h2 = super().forward(x)
+
+        for block in self.upsample: # SparseSubdivideBlock3d
+            h2 = block.float()(h2.float())
+
+        h2 = h2.type(x.dtype)
+
+        h2 = self.out_layer.float()(h2)
+
+        return self.to_representation(h2)
     
 
 class ElasticSLatMeshDecoder(SparseTransformerElasticMixin, SLatMeshDecoder):

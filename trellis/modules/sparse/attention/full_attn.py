@@ -87,6 +87,7 @@ def sparse_scaled_dot_product_attention(q: torch.Tensor, k: SparseTensor, v: Spa
     """
     ...
 
+# xxxx_debug
 def sparse_scaled_dot_product_attention(*args, **kwargs):
     arg_names_dict = {
         1: ['qkv'],

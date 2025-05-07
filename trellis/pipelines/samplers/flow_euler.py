@@ -6,7 +6,7 @@ from easydict import EasyDict as edict
 from .base import Sampler
 from .classifier_free_guidance_mixin import ClassifierFreeGuidanceSamplerMixin
 from .guidance_interval_mixin import GuidanceIntervalSamplerMixin
-
+import pdb
 
 class FlowEulerSampler(Sampler):
     """
@@ -36,14 +36,19 @@ class FlowEulerSampler(Sampler):
         return x_0, eps
 
     def _inference_model(self, model, x_t, t, cond=None, **kwargs):
-        t = torch.tensor([1000 * t] * x_t.shape[0], device=x_t.device, dtype=torch.float32)
+        # t = torch.tensor([1000 * t] * x_t.shape[0], device=x_t.device, dtype=torch.float32)
+        t = torch.tensor([1000 * t] * x_t.shape[0], device=x_t.device, dtype=x_t.dtype)
+
         if cond is not None and cond.shape[0] == 1 and x_t.shape[0] > 1:
             cond = cond.repeat(x_t.shape[0], *([1] * (len(cond.shape) - 1)))
+
+        # model -- SparseStructureFlowModel, device='cuda:0', dtype=torch.float16
         return model(x_t, t, cond, **kwargs)
 
     def _get_model_prediction(self, model, x_t, t, cond=None, **kwargs):
         pred_v = self._inference_model(model, x_t, t, cond, **kwargs)
         pred_x_0, pred_eps = self._v_to_xstart_eps(x_t=x_t, t=t, v=pred_v)
+
         return pred_x_0, pred_eps, pred_v
 
     @torch.no_grad()
@@ -110,8 +115,12 @@ class FlowEulerSampler(Sampler):
         t_seq = rescale_t * t_seq / (1 + (rescale_t - 1) * t_seq)
         t_pairs = list((t_seq[i], t_seq[i + 1]) for i in range(steps))
         ret = edict({"samples": None, "pred_x_t": [], "pred_x_0": []})
+        # model -- SparseStructureFlowModel, cuda, torch.float16
+        # model = model.float()
+
         for t, t_prev in tqdm(t_pairs, desc="Sampling", disable=not verbose):
             out = self.sample_once(model, sample, t, t_prev, cond, **kwargs)
+
             sample = out.pred_x_prev
             ret.pred_x_t.append(out.pred_x_prev)
             ret.pred_x_0.append(out.pred_x_0)

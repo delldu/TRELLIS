@@ -1,4 +1,5 @@
 import importlib
+import pdb
 
 __attributes = {
     'SparseStructureEncoder': 'sparse_structure_vae',
@@ -16,7 +17,7 @@ __attributes = {
     'ElasticSLatMeshDecoder': 'structured_latent_vae',
     
     'SLatFlowModel': 'structured_latent_flow',
-    'ElasticSLatFlowModel': 'structured_latent_flow',
+    # 'ElasticSLatFlowModel': 'structured_latent_flow',
 }
 
 __submodules = []
@@ -50,6 +51,7 @@ def from_pretrained(path: str, **kwargs):
     import json
     from safetensors.torch import load_file
     is_local = os.path.exists(f"{path}.json") and os.path.exists(f"{path}.safetensors")
+    print(f"{path}.json and {path}.safetensors exists ? {is_local}")
 
     if is_local:
         config_file = f"{path}.json"
@@ -64,7 +66,11 @@ def from_pretrained(path: str, **kwargs):
 
     with open(config_file, 'r') as f:
         config = json.load(f)
+
+    
     model = __getattr__(config['name'])(**config['args'], **kwargs)
+    # xxxx_debug
+    print(f"====== {model.__class__.__name__} loading {model_file} ... ======")
     model.load_state_dict(load_file(model_file))
 
     return model
@@ -92,5 +98,5 @@ if __name__ == '__main__':
     
     from .structured_latent_flow import (
         SLatFlowModel,
-        ElasticSLatFlowModel,
+        # ElasticSLatFlowModel,
     )

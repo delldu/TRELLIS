@@ -7,7 +7,7 @@ from ...utils.random_utils import hammersley_sequence
 from .base import SparseTransformerBase
 from ...representations import Gaussian
 from ..sparse_elastic_mixin import SparseTransformerElasticMixin
-
+import pdb
 
 class SLatGaussianDecoder(SparseTransformerBase):
     def __init__(
@@ -41,6 +41,24 @@ class SLatGaussianDecoder(SparseTransformerBase):
             use_checkpoint=use_checkpoint,
             qk_rms_norm=qk_rms_norm,
         )
+        assert resolution == 64
+        assert model_channels == 768
+        assert latent_channels == 8
+        assert num_blocks == 12
+        assert num_heads == 12
+        assert num_head_channels == 64
+        assert mlp_ratio == 4
+        assert attn_mode == 'swin'
+        assert window_size == 8
+        assert pe_mode == 'ape'
+        assert use_fp16 == True
+        assert use_checkpoint == False
+        assert qk_rms_norm == False
+        # representation_config = {'lr': {'_xyz': 1.0, '_features_dc': 1.0, 
+        #     '_opacity': 1.0, '_scaling': 1.0, '_rotation': 0.1}, 
+        #     'perturb_offset': True, 'voxel_size': 1.5, 'num_gaussians': 32, '2d_filter_kernel_size': 0.1, 
+        #     '3d_filter_kernel_size': 0.0009, 'scaling_bias': 0.004, 'opacity_bias': 0.1, 'scaling_activation': 'softplus'}
+
         self.resolution = resolution
         self.rep_config = representation_config
         self._calc_layout()
@@ -119,7 +137,7 @@ class SLatGaussianDecoder(SparseTransformerBase):
         h = super().forward(x)
         h = h.type(x.dtype)
         h = h.replace(F.layer_norm(h.feats, h.feats.shape[-1:]))
-        h = self.out_layer(h)
+        h = self.out_layer.float()(h)
         return self.to_representation(h)
     
 

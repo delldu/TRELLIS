@@ -130,7 +130,7 @@ class ModulatedTransformerCrossBlock(nn.Module):
             )
 
     def _forward(self, x: torch.Tensor, mod: torch.Tensor, context: torch.Tensor):
-        if self.share_mod:
+        if self.share_mod: # False
             shift_msa, scale_msa, gate_msa, shift_mlp, scale_mlp, gate_mlp = mod.chunk(6, dim=1)
         else:
             shift_msa, scale_msa, gate_msa, shift_mlp, scale_mlp, gate_mlp = self.adaLN_modulation(mod).chunk(6, dim=1)

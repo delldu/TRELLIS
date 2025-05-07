@@ -10,13 +10,13 @@ from .. import models
 from ..utils.render_utils import get_renderer
 from ..utils.dist_utils import read_file_dist
 from ..utils.data_utils import load_balanced_group_indices
-
+import pdb
 
 class SLatVisMixin:
     def __init__(
         self,
         *args,
-        pretrained_slat_dec: str = 'JeffreyXiang/TRELLIS-image-large/ckpts/slat_dec_gs_swin8_B_64l8gs32_fp16',
+        pretrained_slat_dec: str = './JeffreyXiang/TRELLIS-image-large/ckpts/slat_dec_gs_swin8_B_64l8gs32_fp16',
         slat_dec_path: Optional[str] = None,
         slat_dec_ckpt: Optional[str] = None,
         **kwargs
@@ -26,6 +26,7 @@ class SLatVisMixin:
         self.pretrained_slat_dec = pretrained_slat_dec
         self.slat_dec_path = slat_dec_path
         self.slat_dec_ckpt = slat_dec_ckpt
+        # pdb.set_trace()
         
     def _loading_slat_dec(self):
         if self.slat_dec is not None:

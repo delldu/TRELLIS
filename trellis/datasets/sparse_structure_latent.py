@@ -9,13 +9,13 @@ from ..renderers import OctreeRenderer
 from .components import StandardDatasetBase, TextConditionedMixin, ImageConditionedMixin
 from .. import models
 from ..utils.dist_utils import read_file_dist
-
+import pdb
 
 class SparseStructureLatentVisMixin:
     def __init__(
         self,
         *args,
-        pretrained_ss_dec: str = 'JeffreyXiang/TRELLIS-image-large/ckpts/ss_dec_conv3d_16l8_fp16',
+        pretrained_ss_dec: str = './JeffreyXiang/TRELLIS-image-large/ckpts/ss_dec_conv3d_16l8_fp16',
         ss_dec_path: Optional[str] = None,
         ss_dec_ckpt: Optional[str] = None,
         **kwargs
@@ -25,6 +25,7 @@ class SparseStructureLatentVisMixin:
         self.pretrained_ss_dec = pretrained_ss_dec
         self.ss_dec_path = ss_dec_path
         self.ss_dec_ckpt = ss_dec_ckpt
+        # pdb.set_trace()
         
     def _loading_ss_dec(self):
         if self.ss_dec is not None:
