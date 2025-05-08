@@ -86,7 +86,6 @@ class SparseStructureFlowModel(nn.Module):
         patch_size: int = 2,
         pe_mode: Literal["ape", "rope"] = "ape",
         use_fp16: bool = False,
-        use_checkpoint: bool = False,
         share_mod: bool = False,
         qk_rms_norm: bool = False,
         qk_rms_norm_cross: bool = False,
@@ -104,7 +103,6 @@ class SparseStructureFlowModel(nn.Module):
         assert patch_size == 1
         assert pe_mode == 'ape'
         assert use_fp16 == True
-        assert use_checkpoint == False
         # assert share_mod == False or ...
         assert qk_rms_norm == True
         # assert qk_rms_norm_cross == False or ...
@@ -120,7 +118,6 @@ class SparseStructureFlowModel(nn.Module):
         self.patch_size = patch_size
         # self.pe_mode = pe_mode
         # self.use_fp16 = use_fp16
-        self.use_checkpoint = use_checkpoint
         self.share_mod = share_mod
         # self.qk_rms_norm = qk_rms_norm
         # self.qk_rms_norm_cross = qk_rms_norm_cross
@@ -149,7 +146,6 @@ class SparseStructureFlowModel(nn.Module):
                 num_heads=self.num_heads,
                 mlp_ratio=mlp_ratio,
                 attn_mode='full',
-                use_checkpoint=self.use_checkpoint,
                 use_rope=(pe_mode == "rope"),
                 share_mod=share_mod,
                 qk_rms_norm=qk_rms_norm,

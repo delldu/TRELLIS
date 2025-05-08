@@ -11,7 +11,6 @@ class AbsolutePositionEmbedder(nn.Module):
     """
     def __init__(self, channels: int, in_channels: int = 3):
         super().__init__()
-        # xxxx_debug
         # assert channels == 1024
         # assert in_channels == 3
 
@@ -62,7 +61,6 @@ class FeedForwardNet(nn.Module):
             nn.GELU(approximate="tanh"),
             nn.Linear(int(channels * mlp_ratio), channels),
         )
-        # xxxx_debug pdb.set_trace()
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return self.mlp(x)
@@ -80,14 +78,12 @@ class TransformerBlock(nn.Module):
         attn_mode: Literal["full", "windowed"] = "full",
         window_size: Optional[int] = None,
         shift_window: Optional[int] = None,
-        use_checkpoint: bool = False,
         use_rope: bool = False,
         qk_rms_norm: bool = False,
         qkv_bias: bool = True,
         ln_affine: bool = False,
     ):
         super().__init__()
-        self.use_checkpoint = use_checkpoint
         self.norm1 = LayerNorm32(channels, elementwise_affine=ln_affine, eps=1e-6)
         self.norm2 = LayerNorm32(channels, elementwise_affine=ln_affine, eps=1e-6)
         self.attn = MultiHeadAttention(
@@ -104,7 +100,6 @@ class TransformerBlock(nn.Module):
             channels,
             mlp_ratio=mlp_ratio,
         )
-        # xxxx_debug pdb.set_trace()
 
     def _forward(self, x: torch.Tensor) -> torch.Tensor:
         h = self.norm1(x)
@@ -116,11 +111,7 @@ class TransformerBlock(nn.Module):
         return x
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        assert self.use_checkpoint == False
-        if self.use_checkpoint:
-            return torch.utils.checkpoint.checkpoint(self._forward, x, use_reentrant=False)
-        else:
-            return self._forward(x)
+        return self._forward(x)
 
 
 class TransformerCrossBlock(nn.Module):
@@ -136,7 +127,6 @@ class TransformerCrossBlock(nn.Module):
         attn_mode: Literal["full", "windowed"] = "full",
         window_size: Optional[int] = None,
         shift_window: Optional[Tuple[int, int, int]] = None,
-        use_checkpoint: bool = False,
         use_rope: bool = False,
         qk_rms_norm: bool = False,
         qk_rms_norm_cross: bool = False,
@@ -144,7 +134,6 @@ class TransformerCrossBlock(nn.Module):
         ln_affine: bool = False,
     ):
         super().__init__()
-        self.use_checkpoint = use_checkpoint
         self.norm1 = LayerNorm32(channels, elementwise_affine=ln_affine, eps=1e-6)
         self.norm2 = LayerNorm32(channels, elementwise_affine=ln_affine, eps=1e-6)
         self.norm3 = LayerNorm32(channels, elementwise_affine=ln_affine, eps=1e-6)
@@ -172,7 +161,6 @@ class TransformerCrossBlock(nn.Module):
             channels,
             mlp_ratio=mlp_ratio,
         )
-        # xxxx_debug pdb.set_trace()
 
     def _forward(self, x: torch.Tensor, context: torch.Tensor):
         h = self.norm1(x)
@@ -187,10 +175,5 @@ class TransformerCrossBlock(nn.Module):
         return x
 
     def forward(self, x: torch.Tensor, context: torch.Tensor):
-        assert self.use_checkpoint == False
-
-        if self.use_checkpoint:
-            return torch.utils.checkpoint.checkpoint(self._forward, x, context, use_reentrant=False)
-        else:
-            return self._forward(x, context)
+        return self._forward(x, context)
         

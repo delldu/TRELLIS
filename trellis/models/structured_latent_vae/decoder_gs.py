@@ -22,7 +22,6 @@ class SLatGaussianDecoder(SparseTransformerBase):
         window_size: int = 8,
         pe_mode: Literal["ape", "rope"] = "ape",
         use_fp16: bool = False,
-        use_checkpoint: bool = False,
         qk_rms_norm: bool = False,
         representation_config: dict = None,
     ):
@@ -37,10 +36,8 @@ class SLatGaussianDecoder(SparseTransformerBase):
             window_size=window_size,
             pe_mode=pe_mode,
             use_fp16=use_fp16,
-            use_checkpoint=use_checkpoint,
             qk_rms_norm=qk_rms_norm,
         )
-        # xxxx_debug
         # assert resolution == 64
         # assert model_channels == 768
         # assert latent_channels == 8
@@ -52,7 +49,6 @@ class SLatGaussianDecoder(SparseTransformerBase):
         # assert window_size == 8
         assert pe_mode == 'ape'
         assert use_fp16 == True
-        assert use_checkpoint == False
         # assert qk_rms_norm == False
         
         # representation_config = {'lr': {'_xyz': 1.0, '_features_dc': 1.0, 

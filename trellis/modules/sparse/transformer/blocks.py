@@ -37,14 +37,12 @@ class SparseTransformerBlock(nn.Module):
         shift_sequence: Optional[int] = None,
         shift_window: Optional[Tuple[int, int, int]] = None,
         serialize_mode: Optional[SerializeMode] = None,
-        use_checkpoint: bool = False,
         use_rope: bool = False,
         qk_rms_norm: bool = False,
         qkv_bias: bool = True,
         ln_affine: bool = False,
     ):
         super().__init__()
-        self.use_checkpoint = use_checkpoint
         self.norm1 = LayerNorm32(channels, elementwise_affine=ln_affine, eps=1e-6)
         self.norm2 = LayerNorm32(channels, elementwise_affine=ln_affine, eps=1e-6)
         self.attn = SparseMultiHeadAttention(
@@ -63,7 +61,6 @@ class SparseTransformerBlock(nn.Module):
             channels,
             mlp_ratio=mlp_ratio,
         )
-        # xxxx_debug pdb.set_trace()
 
     def _forward(self, x: SparseTensor) -> SparseTensor:
         h = x.replace(self.norm1.float()(x.feats))
@@ -75,11 +72,7 @@ class SparseTransformerBlock(nn.Module):
         return x
 
     def forward(self, x: SparseTensor) -> SparseTensor:
-        assert self.use_checkpoint == False
-        if self.use_checkpoint:
-            return torch.utils.checkpoint.checkpoint(self._forward, x, use_reentrant=False)
-        else:
-            return self._forward(x)
+        return self._forward(x)
 
 
 class SparseTransformerCrossBlock(nn.Module):
@@ -97,7 +90,6 @@ class SparseTransformerCrossBlock(nn.Module):
         shift_sequence: Optional[int] = None,
         shift_window: Optional[Tuple[int, int, int]] = None,
         serialize_mode: Optional[SerializeMode] = None,
-        use_checkpoint: bool = False,
         use_rope: bool = False,
         qk_rms_norm: bool = False,
         qk_rms_norm_cross: bool = False,
@@ -105,7 +97,6 @@ class SparseTransformerCrossBlock(nn.Module):
         ln_affine: bool = False,
     ):
         super().__init__()
-        self.use_checkpoint = use_checkpoint
         self.norm1 = LayerNorm32(channels, elementwise_affine=ln_affine, eps=1e-6)
         self.norm2 = LayerNorm32(channels, elementwise_affine=ln_affine, eps=1e-6)
         self.norm3 = LayerNorm32(channels, elementwise_affine=ln_affine, eps=1e-6)
@@ -135,7 +126,6 @@ class SparseTransformerCrossBlock(nn.Module):
             channels,
             mlp_ratio=mlp_ratio,
         )
-        # xxxx_debug pdb.set_trace()
 
     def _forward(self, x: SparseTensor, mod: torch.Tensor, context: torch.Tensor):
         h = x.replace(self.norm1(x.feats))
@@ -150,9 +140,4 @@ class SparseTransformerCrossBlock(nn.Module):
         return x
 
     def forward(self, x: SparseTensor, context: torch.Tensor):
-        assert self.use_checkpoint == False
-
-        if self.use_checkpoint:
-            return torch.utils.checkpoint.checkpoint(self._forward, x, context, use_reentrant=False)
-        else:
-            return self._forward(x, context)
+        return self._forward(x, context)

@@ -315,7 +315,6 @@ class TrellisImageTo3DPipeline(Pipeline):
         """
         Run the pipeline.
         """
-        # xxxx_debug
         # num_samples == 1
         # sparse_structure_sampler_params == {}
         # slat_sampler_params == {}

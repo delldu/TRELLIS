@@ -18,14 +18,12 @@ class ModulatedTransformerBlock(nn.Module):
         attn_mode: Literal["full", "windowed"] = "full",
         window_size: Optional[int] = None,
         shift_window: Optional[Tuple[int, int, int]] = None,
-        use_checkpoint: bool = False,
         use_rope: bool = False,
         qk_rms_norm: bool = False,
         qkv_bias: bool = True,
         share_mod: bool = False,
     ):
         super().__init__()
-        self.use_checkpoint = use_checkpoint
         self.share_mod = share_mod
         self.norm1 = LayerNorm32(channels, elementwise_affine=False, eps=1e-6)
         self.norm2 = LayerNorm32(channels, elementwise_affine=False, eps=1e-6)
@@ -68,12 +66,7 @@ class ModulatedTransformerBlock(nn.Module):
         return x
 
     def forward(self, x: torch.Tensor, mod: torch.Tensor) -> torch.Tensor:
-        assert self.use_checkpoint == False
-
-        if self.use_checkpoint:
-            return torch.utils.checkpoint.checkpoint(self._forward, x, mod, use_reentrant=False)
-        else:
-            return self._forward(x, mod)
+        return self._forward(x, mod)
 
 
 class ModulatedTransformerCrossBlock(nn.Module):
@@ -89,7 +82,6 @@ class ModulatedTransformerCrossBlock(nn.Module):
         attn_mode: Literal["full", "windowed"] = "full",
         window_size: Optional[int] = None,
         shift_window: Optional[Tuple[int, int, int]] = None,
-        use_checkpoint: bool = False,
         use_rope: bool = False,
         qk_rms_norm: bool = False,
         qk_rms_norm_cross: bool = False,
@@ -97,7 +89,6 @@ class ModulatedTransformerCrossBlock(nn.Module):
         share_mod: bool = False,
     ):
         super().__init__()
-        self.use_checkpoint = use_checkpoint
         self.share_mod = share_mod
         self.norm1 = LayerNorm32(channels, elementwise_affine=False, eps=1e-6)
         self.norm2 = LayerNorm32(channels, elementwise_affine=True, eps=1e-6)
@@ -154,10 +145,5 @@ class ModulatedTransformerCrossBlock(nn.Module):
         return x
 
     def forward(self, x: torch.Tensor, mod: torch.Tensor, context: torch.Tensor):
-        assert self.use_checkpoint == False
-
-        if self.use_checkpoint:
-            return torch.utils.checkpoint.checkpoint(self._forward, x, mod, context, use_reentrant=False)
-        else:
-            return self._forward(x, mod, context)
+        return self._forward(x, mod, context)
         

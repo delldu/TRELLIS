@@ -59,8 +59,7 @@ class SparseTensor:
         else:
             method_id = 1 if 'data' in kwargs else 0
 
-        # xxxx_debug
-        # assert method_id == 0
+        # assert method_id == 0 or 1
         if method_id == 0:
             feats, coords, shape, layout = args + (None,) * (4 - len(args)) # (None, None, None, None)
             if 'feats' in kwargs:

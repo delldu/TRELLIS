@@ -104,7 +104,6 @@ class SLatFlowModel(nn.Module):
         io_block_channels: List[int] = None,
         pe_mode: Literal["ape", "rope"] = "ape",
         use_fp16: bool = False,
-        use_checkpoint: bool = False,
         use_skip_connection: bool = True,
         share_mod: bool = False,
         qk_rms_norm: bool = False,
@@ -125,7 +124,6 @@ class SLatFlowModel(nn.Module):
         assert io_block_channels == [128]
         assert pe_mode == 'ape'
         assert use_fp16 == True
-        assert use_checkpoint == False
         # assert use_skip_connection == True or ...
         # assert share_mod == False or ...
         assert qk_rms_norm == True
@@ -184,7 +182,6 @@ class SLatFlowModel(nn.Module):
                 num_heads=self.num_heads,
                 mlp_ratio=mlp_ratio,
                 attn_mode='full',
-                use_checkpoint=use_checkpoint,
                 use_rope=(pe_mode == "rope"),
                 share_mod=self.share_mod,
                 qk_rms_norm=qk_rms_norm,

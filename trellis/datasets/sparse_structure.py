@@ -83,7 +83,6 @@ class SparseStructure(StandardDatasetBase):
         
         # Build each representation
         ss = ss.cuda()
-        # xxxx_debug pdb.set_trace()
 
         for i in range(ss.shape[0]):
             representation = Octree(

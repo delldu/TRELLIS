@@ -130,12 +130,10 @@ class SparseMultiHeadAttention(nn.Module):
             if self.attn_mode == "full": # True
                 h = sparse_scaled_dot_product_attention(qkv)
             elif self.attn_mode == "serialized":
-                # xxx_debug pdb.set_trace()
                 h = sparse_serialized_scaled_dot_product_self_attention(
                     qkv, self.window_size, serialize_mode=self.serialize_mode, shift_sequence=self.shift_sequence, shift_window=self.shift_window
                 )
             elif self.attn_mode == "windowed":
-                # xxxx_debug pdb.set_trace()
                 h = sparse_windowed_scaled_dot_product_self_attention(
                     qkv, self.window_size, shift_window=self.shift_window
                 )

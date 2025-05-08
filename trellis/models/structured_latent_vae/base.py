@@ -41,7 +41,6 @@ class SparseTransformerBase(nn.Module):
         window_size: Optional[int] = None,
         pe_mode: Literal["ape", "rope"] = "ape",
         use_fp16: bool = False,
-        use_checkpoint: bool = False,
         qk_rms_norm: bool = False,
     ):
         super().__init__()
@@ -55,7 +54,6 @@ class SparseTransformerBase(nn.Module):
         # assert window_size == 8
         assert pe_mode == 'ape'
         assert use_fp16 == True
-        assert use_checkpoint == False
         # assert qk_rms_norm == False
 
         self.num_blocks = num_blocks
@@ -79,7 +77,6 @@ class SparseTransformerBase(nn.Module):
                 shift_sequence=shift_sequence,
                 shift_window=shift_window,
                 serialize_mode=serialize_mode,
-                use_checkpoint=use_checkpoint,
                 use_rope=(pe_mode == "rope"),
                 qk_rms_norm=qk_rms_norm,
             )

@@ -21,7 +21,6 @@ class SLatEncoder(SparseTransformerBase):
         window_size: int = 8,
         pe_mode: Literal["ape", "rope"] = "ape",
         use_fp16: bool = False,
-        use_checkpoint: bool = False,
         qk_rms_norm: bool = False,
     ):
         super().__init__(
@@ -35,7 +34,6 @@ class SLatEncoder(SparseTransformerBase):
             window_size=window_size,
             pe_mode=pe_mode,
             use_fp16=use_fp16,
-            use_checkpoint=use_checkpoint,
             qk_rms_norm=qk_rms_norm,
         )
         self.resolution = resolution

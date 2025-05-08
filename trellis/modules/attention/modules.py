@@ -24,7 +24,6 @@ class RotaryPositionEmbedder(nn.Module):
         self.freq_dim = hidden_size // in_channels // 2
         self.freqs = torch.arange(self.freq_dim, dtype=torch.float32) / self.freq_dim
         self.freqs = 1.0 / (10000 ** self.freqs)
-        # xxxx_debug pdb.set_trace()
         
     def _get_phases(self, indices: torch.Tensor) -> torch.Tensor:
         self.freqs = self.freqs.to(indices.device)
@@ -45,8 +44,6 @@ class RotaryPositionEmbedder(nn.Module):
             k (sp.SparseTensor): [..., N, D] tensor of keys
             indices (torch.Tensor): [..., N, C] tensor of spatial positions
         """
-        # xxxx_debug pdb.set_trace()
-
         if indices is None:
             indices = torch.arange(q.shape[-2], device=q.device)
             if len(q.shape) > 2:
@@ -121,7 +118,6 @@ class MultiHeadAttention(nn.Module):
             
         self.to_out = nn.Linear(channels, channels)
 
-         # xxxx_debug assert use_rope == False
         if use_rope: # False
             self.rope = RotaryPositionEmbedder(channels)
     

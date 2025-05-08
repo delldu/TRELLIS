@@ -91,7 +91,6 @@ class SLatMeshDecoder(SparseTransformerBase):
         window_size: int = 8,
         pe_mode: Literal["ape", "rope"] = "ape",
         use_fp16: bool = False,
-        use_checkpoint: bool = False,
         qk_rms_norm: bool = False,
         representation_config: dict = None,
     ):
@@ -106,11 +105,8 @@ class SLatMeshDecoder(SparseTransformerBase):
             window_size=window_size,
             pe_mode=pe_mode,
             use_fp16=use_fp16,
-            use_checkpoint=use_checkpoint,
             qk_rms_norm=qk_rms_norm,
         )
-        # xxxx_debug
-        
         # assert resolution == 64
         # assert model_channels == 768
         # assert latent_channels == 8
@@ -122,23 +118,8 @@ class SLatMeshDecoder(SparseTransformerBase):
         # assert window_size == 8
         # assert pe_mode == 'ape'
         assert use_fp16 == True
-        assert use_checkpoint == False
         # assert qk_rms_norm == False
         # representation_config = {'use_color': True}
-
-        # (Pdb) pp config['args']
-        # {'attn_mode': 'swin',
-        #  'latent_channels': 8,
-        #  'mlp_ratio': 4,
-        #  'model_channels': 768,
-        #  'num_blocks': 12,
-        #  'num_heads': 12,
-        #  'representation_config': {'use_color': True},
-        #  'resolution': 64,
-        #  'use_fp16': True,
-        #  'window_size': 8}
-
-        # self.resolution = resolution
         self.rep_config = representation_config
 
         self.mesh_extractor = SparseFeatures2Mesh(res=resolution*4, use_color=self.rep_config.get('use_color', False))
