@@ -69,8 +69,7 @@ def from_pretrained(path: str, **kwargs):
 
     
     model = __getattr__(config['name'])(**config['args'], **kwargs)
-    # xxxx_debug
-    print(f"====== {model.__class__.__name__} loading {model_file} ... ======")
+    print(f"{model.__class__.__name__} loading {model_file} ... ")
     model.load_state_dict(load_file(model_file))
 
     return model

@@ -71,6 +71,25 @@ class SparseResBlock3d(nn.Module):
     
 
 class SLatFlowModel(nn.Module):
+    '''
+    "name": "SLatFlowModel",
+    "args": {
+        "resolution": 64,
+        "in_channels": 8,
+        "out_channels": 8,
+        "model_channels": 1024,
+        "cond_channels": 1024,
+        "num_blocks": 24,
+        "num_heads": 16,
+        "mlp_ratio": 4,
+        "patch_size": 2,
+        "num_io_res_blocks": 2,
+        "io_block_channels": [128],
+        "pe_mode": "ape",
+        "qk_rms_norm": true,
+        "use_fp16": true
+    }
+    '''
     def __init__(
         self,
         resolution: int,
@@ -94,6 +113,7 @@ class SLatFlowModel(nn.Module):
         qk_rms_norm_cross: bool = False,
     ):
         super().__init__()
+        # xxxx_debug
         assert resolution == 64
         assert in_channels == 8
         assert model_channels == 1024
@@ -101,7 +121,7 @@ class SLatFlowModel(nn.Module):
         assert out_channels == 8
         assert num_blocks == 24
         assert num_heads == 16
-        assert num_head_channels == 64
+        # assert num_head_channels == 64 or ...
         assert mlp_ratio == 4
         assert patch_size == 2
         assert num_io_res_blocks == 2
@@ -109,32 +129,32 @@ class SLatFlowModel(nn.Module):
         assert pe_mode == 'ape'
         assert use_fp16 == True
         assert use_checkpoint == False
-        assert use_skip_connection == True
-        assert share_mod == False
+        # assert use_skip_connection == True or ...
+        # assert share_mod == False or ...
         assert qk_rms_norm == True
-        assert qk_rms_norm_cross == False
+        # assert qk_rms_norm_cross == False or ...
 
-        self.resolution = resolution
-        self.in_channels = in_channels
-        self.model_channels = model_channels
-        self.cond_channels = cond_channels
+        # self.resolution = resolution
+        self.in_channels = in_channels # keep !!!
+        # self.model_channels = model_channels
+        # self.cond_channels = cond_channels
         self.out_channels = out_channels
-        self.num_blocks = num_blocks
+        # self.num_blocks = num_blocks
         self.num_heads = num_heads or model_channels // num_head_channels
-        self.mlp_ratio = mlp_ratio
-        self.patch_size = patch_size
-        self.num_io_res_blocks = num_io_res_blocks
-        self.io_block_channels = io_block_channels
+        # self.mlp_ratio = mlp_ratio
+        # self.patch_size = patch_size
+        # self.num_io_res_blocks = num_io_res_blocks
+        # self.io_block_channels = io_block_channels
         self.pe_mode = pe_mode
-        self.use_fp16 = use_fp16
-        self.use_checkpoint = use_checkpoint
+        # self.use_fp16 = use_fp16
+        # self.use_checkpoint = use_checkpoint
         self.use_skip_connection = use_skip_connection
         self.share_mod = share_mod
-        self.qk_rms_norm = qk_rms_norm
-        self.qk_rms_norm_cross = qk_rms_norm_cross
+        # self.qk_rms_norm = qk_rms_norm
+        # self.qk_rms_norm_cross = qk_rms_norm_cross
         self.dtype = torch.float16 if use_fp16 else torch.float32
 
-        if self.io_block_channels is not None: # True
+        if io_block_channels is not None: # True
             assert int(np.log2(patch_size)) == np.log2(patch_size), "Patch size must be a power of 2"
             assert np.log2(patch_size) == len(io_block_channels), "Number of IO ResBlocks must match the number of stages"
 
@@ -153,9 +173,6 @@ class SLatFlowModel(nn.Module):
         self.input_blocks = nn.ModuleList([])
 
         # io_block_channels == [128], [model_channels] == [1024]
-
-        # SparseResBlock3d(128, 1024, out_channels=128) xxxx_debug ????
-
         if io_block_channels is not None: # True
             for chs, next_chs in zip(io_block_channels, io_block_channels[1:] + [model_channels]):
                 self.input_blocks.extend([
@@ -180,13 +197,13 @@ class SLatFlowModel(nn.Module):
                 model_channels,
                 cond_channels,
                 num_heads=self.num_heads,
-                mlp_ratio=self.mlp_ratio,
+                mlp_ratio=mlp_ratio,
                 attn_mode='full',
-                use_checkpoint=self.use_checkpoint,
+                use_checkpoint=use_checkpoint,
                 use_rope=(pe_mode == "rope"),
                 share_mod=self.share_mod,
-                qk_rms_norm=self.qk_rms_norm,
-                qk_rms_norm_cross=self.qk_rms_norm_cross,
+                qk_rms_norm=qk_rms_norm,
+                qk_rms_norm_cross=qk_rms_norm_cross,
             )
             for _ in range(num_blocks)
         ])
@@ -214,7 +231,7 @@ class SLatFlowModel(nn.Module):
             
         self.out_layer = sp.SparseLinear(model_channels if io_block_channels is None else io_block_channels[0], out_channels)
 
-        self.initialize_weights()
+        # self.initialize_weights()
         if use_fp16:
             self.convert_to_fp16()
 
@@ -241,31 +258,31 @@ class SLatFlowModel(nn.Module):
         self.blocks.apply(convert_module_to_f32)
         self.out_blocks.apply(convert_module_to_f32)
 
-    def initialize_weights(self) -> None:
-        # Initialize transformer layers:
-        def _basic_init(module):
-            if isinstance(module, nn.Linear):
-                torch.nn.init.xavier_uniform_(module.weight)
-                if module.bias is not None:
-                    nn.init.constant_(module.bias, 0)
-        self.apply(_basic_init)
+    # def initialize_weights(self) -> None:
+    #     # Initialize transformer layers:
+    #     def _basic_init(module):
+    #         if isinstance(module, nn.Linear):
+    #             torch.nn.init.xavier_uniform_(module.weight)
+    #             if module.bias is not None:
+    #                 nn.init.constant_(module.bias, 0)
+    #     self.apply(_basic_init)
 
-        # Initialize timestep embedding MLP:
-        nn.init.normal_(self.t_embedder.mlp[0].weight, std=0.02)
-        nn.init.normal_(self.t_embedder.mlp[2].weight, std=0.02)
+    #     # Initialize timestep embedding MLP:
+    #     nn.init.normal_(self.t_embedder.mlp[0].weight, std=0.02)
+    #     nn.init.normal_(self.t_embedder.mlp[2].weight, std=0.02)
 
-        # Zero-out adaLN modulation layers in DiT blocks:
-        if self.share_mod:
-            nn.init.constant_(self.adaLN_modulation[-1].weight, 0)
-            nn.init.constant_(self.adaLN_modulation[-1].bias, 0)
-        else:
-            for block in self.blocks:
-                nn.init.constant_(block.adaLN_modulation[-1].weight, 0)
-                nn.init.constant_(block.adaLN_modulation[-1].bias, 0)
+    #     # Zero-out adaLN modulation layers in DiT blocks:
+    #     if self.share_mod:
+    #         nn.init.constant_(self.adaLN_modulation[-1].weight, 0)
+    #         nn.init.constant_(self.adaLN_modulation[-1].bias, 0)
+    #     else:
+    #         for block in self.blocks:
+    #             nn.init.constant_(block.adaLN_modulation[-1].weight, 0)
+    #             nn.init.constant_(block.adaLN_modulation[-1].bias, 0)
 
-        # Zero-out output layers:
-        nn.init.constant_(self.out_layer.weight, 0)
-        nn.init.constant_(self.out_layer.bias, 0)
+    #     # Zero-out output layers:
+    #     nn.init.constant_(self.out_layer.weight, 0)
+    #     nn.init.constant_(self.out_layer.bias, 0)
 
     def forward(self, x: sp.SparseTensor, t: torch.Tensor, cond: torch.Tensor) -> sp.SparseTensor:
         h2 = self.input_layer.float()(x).type(self.dtype)

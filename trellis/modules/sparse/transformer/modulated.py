@@ -5,7 +5,7 @@ from ..basic import SparseTensor
 from ..attention import SparseMultiHeadAttention, SerializeMode
 from ...norm import LayerNorm32
 from .blocks import SparseFeedForwardNet
-
+import pdb
 
 class ModulatedSparseTransformerBlock(nn.Module):
     """
@@ -53,6 +53,7 @@ class ModulatedSparseTransformerBlock(nn.Module):
                 nn.SiLU(),
                 nn.Linear(channels, 6 * channels, bias=True)
             )
+        # xxxx_debug pdb.set_trace()
 
     def _forward(self, x: SparseTensor, mod: torch.Tensor) -> SparseTensor:
         if self.share_mod:
@@ -72,6 +73,7 @@ class ModulatedSparseTransformerBlock(nn.Module):
         return x
 
     def forward(self, x: SparseTensor, mod: torch.Tensor) -> SparseTensor:
+        assert self.use_checkpoint == False
         if self.use_checkpoint:
             return torch.utils.checkpoint.checkpoint(self._forward, x, mod, use_reentrant=False)
         else:
@@ -138,6 +140,7 @@ class ModulatedSparseTransformerCrossBlock(nn.Module):
                 nn.SiLU(),
                 nn.Linear(channels, 6 * channels, bias=True)
             )
+        # xxxx_debug pdb.set_trace()
 
     def _forward(self, x: SparseTensor, mod: torch.Tensor, context: torch.Tensor) -> SparseTensor:
         # pdb.set_trace()
@@ -166,6 +169,7 @@ class ModulatedSparseTransformerCrossBlock(nn.Module):
         return x
 
     def forward(self, x: SparseTensor, mod: torch.Tensor, context: torch.Tensor) -> SparseTensor:
+        assert self.use_checkpoint == False
         if self.use_checkpoint:
             return torch.utils.checkpoint.checkpoint(self._forward, x, mod, context, use_reentrant=False)
         else:

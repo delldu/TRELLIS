@@ -3,7 +3,7 @@ import torch
 import torch.nn as nn
 from ..attention import MultiHeadAttention
 from ..norm import LayerNorm32
-
+import pdb
 
 class AbsolutePositionEmbedder(nn.Module):
     """
@@ -11,12 +11,20 @@ class AbsolutePositionEmbedder(nn.Module):
     """
     def __init__(self, channels: int, in_channels: int = 3):
         super().__init__()
+        # xxxx_debug
+        # assert channels == 1024
+        # assert in_channels == 3
+
         self.channels = channels
         self.in_channels = in_channels
-        self.freq_dim = channels // in_channels // 2
+        self.freq_dim = channels // in_channels // 2 # 170
         self.freqs = torch.arange(self.freq_dim, dtype=torch.float32) / self.freq_dim
         self.freqs = 1.0 / (10000 ** self.freqs)
-        
+        # (Pdb) self.freqs.size() -- [170]
+        # (Pdb) self.freqs
+        # tensor([    1.000000,     0.947263,     0.897307,  ...,     0.000118,
+        #             0.000111,     0.000106])
+
     def _sin_cos_embedding(self, x: torch.Tensor) -> torch.Tensor:
         """
         Create sinusoidal position embeddings.
@@ -41,7 +49,7 @@ class AbsolutePositionEmbedder(nn.Module):
         assert D == self.in_channels, "Input dimension must match number of input channels"
         embed = self._sin_cos_embedding(x.reshape(-1))
         embed = embed.reshape(N, -1)
-        if embed.shape[1] < self.channels:
+        if embed.shape[1] < self.channels: # self.channels == 1024
             embed = torch.cat([embed, torch.zeros(N, self.channels - embed.shape[1], device=embed.device)], dim=-1)
         return embed
 
@@ -54,6 +62,7 @@ class FeedForwardNet(nn.Module):
             nn.GELU(approximate="tanh"),
             nn.Linear(int(channels * mlp_ratio), channels),
         )
+        # xxxx_debug pdb.set_trace()
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return self.mlp(x)
@@ -95,6 +104,7 @@ class TransformerBlock(nn.Module):
             channels,
             mlp_ratio=mlp_ratio,
         )
+        # xxxx_debug pdb.set_trace()
 
     def _forward(self, x: torch.Tensor) -> torch.Tensor:
         h = self.norm1(x)
@@ -106,6 +116,7 @@ class TransformerBlock(nn.Module):
         return x
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        assert self.use_checkpoint == False
         if self.use_checkpoint:
             return torch.utils.checkpoint.checkpoint(self._forward, x, use_reentrant=False)
         else:
@@ -161,6 +172,7 @@ class TransformerCrossBlock(nn.Module):
             channels,
             mlp_ratio=mlp_ratio,
         )
+        # xxxx_debug pdb.set_trace()
 
     def _forward(self, x: torch.Tensor, context: torch.Tensor):
         h = self.norm1(x)
@@ -175,6 +187,8 @@ class TransformerCrossBlock(nn.Module):
         return x
 
     def forward(self, x: torch.Tensor, context: torch.Tensor):
+        assert self.use_checkpoint == False
+
         if self.use_checkpoint:
             return torch.utils.checkpoint.checkpoint(self._forward, x, context, use_reentrant=False)
         else:

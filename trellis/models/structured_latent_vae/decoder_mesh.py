@@ -109,19 +109,20 @@ class SLatMeshDecoder(SparseTransformerBase):
             use_checkpoint=use_checkpoint,
             qk_rms_norm=qk_rms_norm,
         )
-        assert resolution == 64
-        assert model_channels == 768
-        assert latent_channels == 8
-        assert num_blocks == 12
-        assert num_heads == 12
-        assert num_head_channels == 64
-        assert mlp_ratio == 4
-        assert attn_mode == 'swin'
-        assert window_size == 8
-        assert pe_mode == 'ape'
-        assert use_fp16 == True
-        assert use_checkpoint == False
-        assert qk_rms_norm == False
+        # xxxx_debug
+        # assert resolution == 64
+        # assert model_channels == 768
+        # assert latent_channels == 8
+        # assert num_blocks == 12
+        # assert num_heads == 12
+        # assert num_head_channels == 64
+        # assert mlp_ratio == 4
+        # assert attn_mode == 'swin'
+        # assert window_size == 8
+        # assert pe_mode == 'ape'
+        # assert use_fp16 == True
+        # assert use_checkpoint == False
+        # assert qk_rms_norm == False
         # representation_config = {'use_color': True}
 
         # (Pdb) pp config['args']
@@ -162,15 +163,15 @@ class SLatMeshDecoder(SparseTransformerBase):
         ])
         self.out_layer = sp.SparseLinear(model_channels // 8, self.out_channels)
 
-        self.initialize_weights()
+        # self.initialize_weights()
         if use_fp16:
             self.convert_to_fp16()
 
-    def initialize_weights(self) -> None:
-        super().initialize_weights()
-        # Zero-out output layers:
-        nn.init.constant_(self.out_layer.weight, 0)
-        nn.init.constant_(self.out_layer.bias, 0)
+    # def initialize_weights(self) -> None:
+    #     super().initialize_weights()
+    #     # Zero-out output layers:
+    #     nn.init.constant_(self.out_layer.weight, 0)
+    #     nn.init.constant_(self.out_layer.bias, 0)
 
     def convert_to_fp16(self) -> None:
         """

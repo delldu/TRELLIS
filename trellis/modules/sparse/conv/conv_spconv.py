@@ -16,20 +16,25 @@ class SparseConv3d(nn.Module):
         # padding = None
         # bias = True
         # indice_key = 'res_128'
-        if 'spconv' not in globals():
+        if 'spconv' not in globals(): # True
             import spconv.pytorch as spconv
         algo = None
-        if SPCONV_ALGO == 'native':
+        # xxxx_debug assert SPCONV_ALGO == 'native'
+        if SPCONV_ALGO == 'native': # True
             algo = spconv.ConvAlgo.Native
         elif SPCONV_ALGO == 'implicit_gemm':
             algo = spconv.ConvAlgo.MaskImplicitGemm
-        if stride == 1 and (padding is None):
+        if stride == 1 and (padding is None): # True
             self.conv = spconv.SubMConv3d(in_channels, out_channels, kernel_size, dilation=dilation, bias=bias, indice_key=indice_key, algo=algo)
         else:
+            # xxxx_debug pdb.set_trace()
             self.conv = spconv.SparseConv3d(in_channels, out_channels, kernel_size, stride=stride, dilation=dilation, padding=padding, bias=bias, indice_key=indice_key, algo=algo)
         self.stride = tuple(stride) if isinstance(stride, (list, tuple)) else (stride, stride, stride)
-        self.padding = padding
-
+        # self.stride --- (1, 1, 1)
+        self.padding = padding # None
+        # self.conv -- SubMConv3d(768, 192, kernel_size=[3, 3, 3], stride=[1, 1, 1], padding=[0, 0, 0], dilation=[1, 1, 1], output_padding=[0, 0, 0], algo=ConvAlgo.Native)
+        # xxxx_debug assert self.padding == None
+        
     def forward(self, x: SparseTensor) -> SparseTensor:
         spatial_changed = any(s != 1 for s in self.stride) or (self.padding is not None)
         # pdb.set_trace()
@@ -67,7 +72,8 @@ class SparseInverseConv3d(nn.Module):
             import spconv.pytorch as spconv
         self.conv = spconv.SparseInverseConv3d(in_channels, out_channels, kernel_size, bias=bias, indice_key=indice_key)
         self.stride = tuple(stride) if isinstance(stride, (list, tuple)) else (stride, stride, stride)
-
+        # xxxx_debug pdb.set_trace()
+        
     def forward(self, x: SparseTensor) -> SparseTensor:
         spatial_changed = any(s != 1 for s in self.stride)
         if spatial_changed:

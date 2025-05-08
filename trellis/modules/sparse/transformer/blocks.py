@@ -6,7 +6,7 @@ from ..linear import SparseLinear
 from ..nonlinearity import SparseGELU
 from ..attention import SparseMultiHeadAttention, SerializeMode
 from ...norm import LayerNorm32
-
+import pdb
 
 class SparseFeedForwardNet(nn.Module):
     def __init__(self, channels: int, mlp_ratio: float = 4.0):
@@ -16,6 +16,8 @@ class SparseFeedForwardNet(nn.Module):
             SparseGELU(approximate="tanh"),
             SparseLinear(int(channels * mlp_ratio), channels),
         )
+        # channels = 1024
+        # mlp_ratio = 4
 
     def forward(self, x: SparseTensor) -> SparseTensor:
         return self.mlp(x)
@@ -61,17 +63,19 @@ class SparseTransformerBlock(nn.Module):
             channels,
             mlp_ratio=mlp_ratio,
         )
+        # xxxx_debug pdb.set_trace()
 
     def _forward(self, x: SparseTensor) -> SparseTensor:
-        h = x.replace(self.norm1.float()(x.feats)) # xxxx_debug
+        h = x.replace(self.norm1.float()(x.feats))
         h = self.attn(h)
         x = x + h
-        h = x.replace(self.norm2.float()(x.feats)) # xxxx_debug
+        h = x.replace(self.norm2.float()(x.feats))
         h = self.mlp(h)
         x = x + h
         return x
 
     def forward(self, x: SparseTensor) -> SparseTensor:
+        assert self.use_checkpoint == False
         if self.use_checkpoint:
             return torch.utils.checkpoint.checkpoint(self._forward, x, use_reentrant=False)
         else:
@@ -131,6 +135,7 @@ class SparseTransformerCrossBlock(nn.Module):
             channels,
             mlp_ratio=mlp_ratio,
         )
+        # xxxx_debug pdb.set_trace()
 
     def _forward(self, x: SparseTensor, mod: torch.Tensor, context: torch.Tensor):
         h = x.replace(self.norm1(x.feats))
@@ -145,6 +150,8 @@ class SparseTransformerCrossBlock(nn.Module):
         return x
 
     def forward(self, x: SparseTensor, context: torch.Tensor):
+        assert self.use_checkpoint == False
+
         if self.use_checkpoint:
             return torch.utils.checkpoint.checkpoint(self._forward, x, context, use_reentrant=False)
         else:

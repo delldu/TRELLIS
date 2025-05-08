@@ -3,7 +3,7 @@ import torch
 import torch.nn as nn
 from . import BACKEND, DEBUG
 SparseTensorData = None # Lazy import
-
+import pdb
 
 __all__ = [
     'SparseTensor',
@@ -29,20 +29,28 @@ class SparseTensor:
     - Data corresponding to a same batch should be contiguous.
     - Coords should be in [0, 1023]
     """
+    # coords=coords,
+    # feats=feats,
     @overload
-    def __init__(self, feats: torch.Tensor, coords: torch.Tensor, shape: Optional[torch.Size] = None, layout: Optional[List[slice]] = None, **kwargs): ...
+    def __init__(self, feats: torch.Tensor, coords: torch.Tensor, shape: Optional[torch.Size] = None, \
+        layout: Optional[List[slice]] = None, **kwargs): ...
 
     @overload
-    def __init__(self, data, shape: Optional[torch.Size] = None, layout: Optional[List[slice]] = None, **kwargs): ...
+    def __init__(self, data, shape: Optional[torch.Size] = None, \
+        layout: Optional[List[slice]] = None, **kwargs): ...
 
     def __init__(self, *args, **kwargs):
+        # args = ()
+        # kwargs = {}
         # Lazy import of sparse tensor backend
         global SparseTensorData
-        if SparseTensorData is None:
+        # SparseTensorData -- <class 'spconv.pytorch.core.SparseConvTensor'>
+        if SparseTensorData is None: # False
             import importlib
+            # BACKEND -- 'spconv'
             if BACKEND == 'torchsparse':
                 SparseTensorData = importlib.import_module('torchsparse').SparseTensor
-            elif BACKEND == 'spconv':
+            elif BACKEND == 'spconv': # True
                 SparseTensorData = importlib.import_module('spconv.pytorch').SparseConvTensor
                 
         method_id = 0
@@ -51,8 +59,10 @@ class SparseTensor:
         else:
             method_id = 1 if 'data' in kwargs else 0
 
+        # xxxx_debug
+        # assert method_id == 0
         if method_id == 0:
-            feats, coords, shape, layout = args + (None,) * (4 - len(args))
+            feats, coords, shape, layout = args + (None,) * (4 - len(args)) # (None, None, None, None)
             if 'feats' in kwargs:
                 feats = kwargs['feats']
                 del kwargs['feats']
@@ -72,8 +82,11 @@ class SparseTensor:
                 layout = self.__cal_layout(coords, shape[0])
             if BACKEND == 'torchsparse':
                 self.data = SparseTensorData(feats, coords, **kwargs)
-            elif BACKEND == 'spconv':
+            elif BACKEND == 'spconv': # True
                 spatial_shape = list(coords.max(0)[0] + 1)[1:]
+                # spatial_shape -- [tensor(60, device='cuda:0', dtype=torch.int32), 
+                #     tensor(46, device='cuda:0', dtype=torch.int32), 
+                #     tensor(64, device='cuda:0', dtype=torch.int32)]
                 self.data = SparseTensorData(feats.reshape(feats.shape[0], -1), coords, spatial_shape, shape[0], **kwargs)
                 self.data._features = feats
         elif method_id == 1:
@@ -113,7 +126,8 @@ class SparseTensor:
                 print(f"- Scale: {self._scale}")
                 print(f"- Coords: {self.coords}")
                 raise e
-        
+        #pdb.set_trace()
+
     def __cal_shape(self, feats, coords):
         shape = []
         shape.append(coords[:, 0].max().item() + 1)
@@ -251,7 +265,7 @@ class SparseTensor:
                 spatial_range=self.data.spatial_range,
             )
             new_data._caches = self.data._caches
-        elif BACKEND == 'spconv':
+        elif BACKEND == 'spconv': # True
             new_data = SparseTensorData(
                 self.data.features.reshape(self.data.features.shape[0], -1),
                 self.data.indices,
@@ -270,7 +284,8 @@ class SparseTensor:
             new_data.int8_scale = self.data.int8_scale
             if coords is not None:
                 new_data.indices = coords
-        new_tensor = SparseTensor(new_data, shape=torch.Size(new_shape), layout=self.layout, scale=self._scale, spatial_cache=self._spatial_cache)
+        new_tensor = SparseTensor(new_data, shape=torch.Size(new_shape), layout=self.layout, scale=self._scale, \
+                spatial_cache=self._spatial_cache)
         return new_tensor
 
     @staticmethod

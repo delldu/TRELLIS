@@ -45,7 +45,6 @@ def set_attn(attn: Literal['xformers', 'flash_attn']):
     
 import importlib
 
-# xxxx_debug
 __attributes = {
     'SparseTensor': 'basic',
     'sparse_batch_broadcast': 'basic',
@@ -54,7 +53,7 @@ __attributes = {
     'sparse_unbind': 'basic',
     'SparseGroupNorm': 'norm',
     'SparseLayerNorm': 'norm',
-    'SparseGroupNorm32': 'norm', # xxxx_debug
+    'SparseGroupNorm32': 'norm',
     'SparseLayerNorm32': 'norm',
     'SparseReLU': 'nonlinearity',
     'SparseSiLU': 'nonlinearity',

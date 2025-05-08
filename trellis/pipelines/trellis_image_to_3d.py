@@ -35,7 +35,6 @@ class TrellisImageTo3DPipeline(Pipeline):
         if models is None:
             return
         super().__init__(models)
-        # xxxx_debug
         self._device = torch.device("cpu") # next(self.models['image_cond_model'].parameters()).device
         self.sparse_structure_sampler = sparse_structure_sampler
         self.slat_sampler = slat_sampler
@@ -44,6 +43,8 @@ class TrellisImageTo3DPipeline(Pipeline):
         self.slat_normalization = slat_normalization
         self.rembg_session = None
         self._init_image_cond_model(image_cond_model)
+
+        # pdb.set_trace()
 
     def load_model(self, model_key: str) -> nn.Module:
         """Move a model to CUDA and return it."""
@@ -99,7 +100,6 @@ class TrellisImageTo3DPipeline(Pipeline):
         """
         Initialize the image conditioning model.
         """
-        # xxxx_debug
         # dinov2_model = torch.hub.load('facebookresearch/dinov2', name, pretrained=True)
         dinov2_model = torch.hub.load('/home/dell/.cache/torch/hub/facebookresearch_dinov2_main', 
             name, pretrained=True, trust_repo=True, source='local')
@@ -274,12 +274,18 @@ class TrellisImageTo3DPipeline(Pipeline):
         # flow_model = self.models['slat_flow_model']
         # pdb.set_trace()
         
-        flow_model = self.load_model('slat_flow_model')
+        flow_model = self.load_model('slat_flow_model') # SLatFlowModel
         noise = sp.SparseTensor(
-            feats=torch.randn(coords.shape[0], flow_model.in_channels).to(flow_model.device),
+            feats=torch.randn(coords.shape[0], flow_model.in_channels).to(flow_model.device), # (14955, 8)
+
             coords=coords,
         )
         sampler_params = {**self.slat_sampler_params, **sampler_params}
+        # (Pdb) sampler_params
+        # {'steps': 25, 'cfg_strength': 5.0, 'cfg_interval': [0.5, 1.0], 'rescale_t': 3.0}
+
+        # self.slat_sampler -- 
+        # <trellis.pipelines.samplers.flow_euler.FlowEulerGuidanceIntervalSampler object at 0x7f332df17c70>
         slat = self.slat_sampler.sample(
             flow_model,
             noise,
@@ -308,16 +314,11 @@ class TrellisImageTo3DPipeline(Pipeline):
     ) -> dict:
         """
         Run the pipeline.
-
-        Args:
-            image (Image.Image): The image prompt.
-            num_samples (int): The number of samples to generate.
-            seed (int): The random seed.
-            sparse_structure_sampler_params (dict): Additional parameters for the sparse structure sampler.
-            slat_sampler_params (dict): Additional parameters for the structured latent sampler.
-            formats (List[str]): The formats to decode the structured latent to.
-            preprocess_image (bool): Whether to preprocess the image.
         """
+        # xxxx_debug
+        # num_samples == 1
+        # sparse_structure_sampler_params == {}
+        # slat_sampler_params == {}
 
         if preprocess_image: # True
             image = self.preprocess_image(image)
@@ -327,12 +328,20 @@ class TrellisImageTo3DPipeline(Pipeline):
         #     tensor [cond] size: [1, 1374, 1024], min: -25.644333, max: 15.48742, mean: 0.0
         #     tensor [neg_cond] size: [1, 1374, 1024], min: 0.0, max: 0.0, mean: 0.0
         torch.manual_seed(seed)
-        # todos.debug.output_var("cond", cond)
 
         coords = self.sample_sparse_structure(cond, num_samples, sparse_structure_sampler_params)
-        # pdb.set_trace()
+        # tensor [coords] size: [14955, 4], min: 0.0, max: 63.0, mean: 23.262018
+
         slat = self.sample_slat(cond, coords, slat_sampler_params)
-        return self.decode_slat(slat, formats)
+        # [slat] type: <class 'trellis.modules.sparse.basic.SparseTensor'>
+        # tensor [slat.feats] size: [14955, 8], min: -9.590652, max: 9.931234, mean: -0.068985
+
+        output = self.decode_slat(slat, formats)
+        # output is dict:
+        #     [mesh] type: <class 'list'>, [<trellis.representations.mesh.cube2mesh.MeshExtractResult object at 0x7f29a27293d0>]
+        #     [gaussian] type: <class 'list'> [<trellis.representations.gaussian.gaussian_model.Gaussian object at 0x7f29a2729df0>]
+
+        return output
 
     @contextmanager
     def inject_sampler_multi_image(

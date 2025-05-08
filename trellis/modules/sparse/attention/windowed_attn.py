@@ -59,7 +59,6 @@ def calc_window_partition(
 
     return fwd_indices, bwd_indices, seq_lens, seq_batch_indices
     
-# xxxx_debug
 def sparse_windowed_scaled_dot_product_self_attention(
     qkv: SparseTensor,
     window_size: int,

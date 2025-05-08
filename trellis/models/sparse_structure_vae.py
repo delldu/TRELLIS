@@ -27,7 +27,7 @@ class ResBlock3d(nn.Module):
         norm_type: Literal["group", "layer"] = "layer",
     ):
         super().__init__()
-        self.channels = channels
+        # self.channels = channels
         self.out_channels = out_channels or channels
 
         self.norm1 = norm_layer(norm_type, channels)
@@ -125,10 +125,10 @@ class SparseStructureEncoder(nn.Module):
     ):
         super().__init__()
         self.in_channels = in_channels
-        self.latent_channels = latent_channels
-        self.num_res_blocks = num_res_blocks
-        self.channels = channels
-        self.num_res_blocks_middle = num_res_blocks_middle
+        # self.latent_channels = latent_channels
+        # self.num_res_blocks = num_res_blocks
+        # self.channels = channels
+        # self.num_res_blocks_middle = num_res_blocks_middle
         self.norm_type = norm_type
         self.use_fp16 = use_fp16
         self.dtype = torch.float16 if use_fp16 else torch.float32
@@ -211,16 +211,15 @@ class SparseStructureEncoder(nn.Module):
 
 class SparseStructureDecoder(nn.Module):
     """
-    Decoder for Sparse Structure (\mathcal{D}_S in the paper Sec. 3.3).
-    
-    Args:
-        out_channels (int): Channels of the output.
-        latent_channels (int): Channels of the latent representation.
-        num_res_blocks (int): Number of residual blocks at each resolution.
-        channels (List[int]): Channels of the decoder blocks.
-        num_res_blocks_middle (int): Number of residual blocks in the middle.
-        norm_type (Literal["group", "layer"]): Type of normalization layer.
-        use_fp16 (bool): Whether to use FP16.
+    "name": "SparseStructureDecoder",
+    "args": {
+        "out_channels": 1,
+        "latent_channels": 8,
+        "num_res_blocks": 2,
+        "num_res_blocks_middle": 2,
+        "channels": [512, 128, 32],
+        "use_fp16": true
+    }
     """ 
     def __init__(
         self,
@@ -233,19 +232,20 @@ class SparseStructureDecoder(nn.Module):
         use_fp16: bool = False,
     ):
         super().__init__()
+        # xxxx_debug
         assert out_channels == 1
         assert latent_channels == 8
         assert num_res_blocks == 2
         assert channels == [512, 128, 32]
         assert num_res_blocks_middle == 2
-        assert norm_type == 'layer'
+        # assert norm_type == 'layer'
         assert use_fp16 == True
 
-        self.out_channels = out_channels
-        self.latent_channels = latent_channels
-        self.num_res_blocks = num_res_blocks
-        self.channels = channels
-        self.num_res_blocks_middle = num_res_blocks_middle
+        # self.out_channels = out_channels
+        # self.latent_channels = latent_channels
+        # self.num_res_blocks = num_res_blocks
+        # self.channels = channels
+        # self.num_res_blocks_middle = num_res_blocks_middle
         self.norm_type = norm_type
         self.use_fp16 = use_fp16
         self.dtype = torch.float16 if use_fp16 else torch.float32

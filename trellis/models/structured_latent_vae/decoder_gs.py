@@ -41,19 +41,21 @@ class SLatGaussianDecoder(SparseTransformerBase):
             use_checkpoint=use_checkpoint,
             qk_rms_norm=qk_rms_norm,
         )
-        assert resolution == 64
-        assert model_channels == 768
-        assert latent_channels == 8
-        assert num_blocks == 12
-        assert num_heads == 12
-        assert num_head_channels == 64
-        assert mlp_ratio == 4
-        assert attn_mode == 'swin'
-        assert window_size == 8
-        assert pe_mode == 'ape'
-        assert use_fp16 == True
-        assert use_checkpoint == False
-        assert qk_rms_norm == False
+        # xxxx_debug
+        # assert resolution == 64
+        # assert model_channels == 768
+        # assert latent_channels == 8
+        # assert num_blocks == 12
+        # assert num_heads == 12
+        # assert num_head_channels == 64
+        # assert mlp_ratio == 4
+        # assert attn_mode == 'swin'
+        # assert window_size == 8
+        # assert pe_mode == 'ape'
+        # assert use_fp16 == True
+        # assert use_checkpoint == False
+        # assert qk_rms_norm == False
+        
         # representation_config = {'lr': {'_xyz': 1.0, '_features_dc': 1.0, 
         #     '_opacity': 1.0, '_scaling': 1.0, '_rotation': 0.1}, 
         #     'perturb_offset': True, 'voxel_size': 1.5, 'num_gaussians': 32, '2d_filter_kernel_size': 0.1, 
@@ -65,15 +67,15 @@ class SLatGaussianDecoder(SparseTransformerBase):
         self.out_layer = sp.SparseLinear(model_channels, self.out_channels)
         self._build_perturbation()
 
-        self.initialize_weights()
+        # self.initialize_weights()
         if use_fp16:
             self.convert_to_fp16()
 
-    def initialize_weights(self) -> None:
-        super().initialize_weights()
-        # Zero-out output layers:
-        nn.init.constant_(self.out_layer.weight, 0)
-        nn.init.constant_(self.out_layer.bias, 0)
+    # def initialize_weights(self) -> None:
+    #     super().initialize_weights()
+    #     # Zero-out output layers:
+    #     nn.init.constant_(self.out_layer.weight, 0)
+    #     nn.init.constant_(self.out_layer.bias, 0)
 
     def _build_perturbation(self) -> None:
         perturbation = [hammersley_sequence(3, i, self.rep_config['num_gaussians']) for i in range(self.rep_config['num_gaussians'])]

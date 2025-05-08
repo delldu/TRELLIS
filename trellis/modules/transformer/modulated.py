@@ -4,7 +4,7 @@ import torch.nn as nn
 from ..attention import MultiHeadAttention
 from ..norm import LayerNorm32
 from .blocks import FeedForwardNet
-
+import pdb
 
 class ModulatedTransformerBlock(nn.Module):
     """
@@ -48,6 +48,7 @@ class ModulatedTransformerBlock(nn.Module):
                 nn.SiLU(),
                 nn.Linear(channels, 6 * channels, bias=True)
             )
+        # xxxx_debug pdb.set_trace()
 
     def _forward(self, x: torch.Tensor, mod: torch.Tensor) -> torch.Tensor:
         if self.share_mod:
@@ -67,6 +68,8 @@ class ModulatedTransformerBlock(nn.Module):
         return x
 
     def forward(self, x: torch.Tensor, mod: torch.Tensor) -> torch.Tensor:
+        assert self.use_checkpoint == False
+
         if self.use_checkpoint:
             return torch.utils.checkpoint.checkpoint(self._forward, x, mod, use_reentrant=False)
         else:
@@ -128,7 +131,8 @@ class ModulatedTransformerCrossBlock(nn.Module):
                 nn.SiLU(),
                 nn.Linear(channels, 6 * channels, bias=True)
             )
-
+        # xxxx_debug pdb.set_trace() ???
+        
     def _forward(self, x: torch.Tensor, mod: torch.Tensor, context: torch.Tensor):
         if self.share_mod: # False
             shift_msa, scale_msa, gate_msa, shift_mlp, scale_mlp, gate_mlp = mod.chunk(6, dim=1)
@@ -150,6 +154,8 @@ class ModulatedTransformerCrossBlock(nn.Module):
         return x
 
     def forward(self, x: torch.Tensor, mod: torch.Tensor, context: torch.Tensor):
+        assert self.use_checkpoint == False
+
         if self.use_checkpoint:
             return torch.utils.checkpoint.checkpoint(self._forward, x, mod, context, use_reentrant=False)
         else:

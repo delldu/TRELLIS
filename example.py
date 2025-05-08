@@ -11,21 +11,25 @@ from trellis.pipelines import TrellisImageTo3DPipeline
 from trellis.utils import render_utils, postprocessing_utils
 
 # Load a pipeline from a model folder or a Hugging Face model hub.
-pipeline = TrellisImageTo3DPipeline.from_pretrained("JeffreyXiang/TRELLIS-image-large")
+pipeline = TrellisImageTo3DPipeline.from_pretrained("./JeffreyXiang/TRELLIS-image-large")
 #pipeline.cuda()
+pdb.set_trace()
 
 # for k, v in pipeline.models.items(): print(k, " -- ", v.__class__)
-# sparse_structure_decoder  --  <class 'trellis.models.sparse_structure_vae.SparseStructureDecoder'>
-# sparse_structure_flow_model  --  <class 'trellis.models.sparse_structure_flow.SparseStructureFlowModel'>
-# slat_decoder_gs  --  <class 'trellis.models.structured_latent_vae.decoder_gs.SLatGaussianDecoder'>
-# slat_decoder_rf  --  <class 'trellis.models.structured_latent_vae.decoder_rf.SLatRadianceFieldDecoder'>
-# slat_flow_model  --  <class 'trellis.models.structured_latent_flow.SLatFlowModel'>
-# image_cond_model  --  <class 'dinov2.models.vision_transformer.DinoVisionTransformer'>
+# --------------------------------------------------------------------------------------------------------------
+# 0) image_cond_model  --  <class 'dinov2.models.vision_transformer.DinoVisionTransformer'>
+# 1) sparse_structure_flow_model  --  <class 'trellis.models.sparse_structure_flow.SparseStructureFlowModel'>
+#    sparse_structure_decoder  --  <class 'trellis.models.sparse_structure_vae.SparseStructureDecoder'>
+# 2) slat_flow_model  --  <class 'trellis.models.structured_latent_flow.SLatFlowModel'>
+# 3) slat_decoder_mesh  --  <class 'trellis.models.structured_latent_vae.decoder_mesh.SLatMeshDecoder'>
+# 4) slat_decoder_gs  --  <class 'trellis.models.structured_latent_vae.decoder_gs.SLatGaussianDecoder'>
 
-# __________________________________ slat_flow_model ________________________________________________
+# slat_decoder_rf  --  <class 'trellis.models.structured_latent_vae.decoder_rf.SLatRadianceFieldDecoder'>
+# --------------------------------------------------------------------------------------------------------------
 
 # Load an image
 image = Image.open("assets/example_image/T.png")
+# image = Image.open("assets/example_image/typical_vehicle_bulldozer.png")
 
 # Run the pipeline
 outputs = pipeline.run(

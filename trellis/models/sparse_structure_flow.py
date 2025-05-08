@@ -54,6 +54,23 @@ class TimestepEmbedder(nn.Module):
 
 
 class SparseStructureFlowModel(nn.Module):
+    '''
+    "name": "SparseStructureFlowModel",
+    "args": {
+        "resolution": 16,
+        "in_channels": 8,
+        "out_channels": 8,
+        "model_channels": 1024,
+        "cond_channels": 1024,
+        "num_blocks": 24,
+        "num_heads": 16,
+        "mlp_ratio": 4,
+        "patch_size": 1,
+        "pe_mode": "ape",
+        "qk_rms_norm": true,
+        "use_fp16": true
+    }
+    '''    
     def __init__(
         self,
         resolution: int,
@@ -81,31 +98,31 @@ class SparseStructureFlowModel(nn.Module):
         assert out_channels == 8
         assert num_blocks == 24
         assert num_heads == 16
-        assert num_head_channels == 64
+        # assert num_head_channels == 64 or ...
         assert mlp_ratio == 4
         assert patch_size == 1
         assert pe_mode == 'ape'
         assert use_fp16 == True
         assert use_checkpoint == False
-        assert share_mod == False
+        # assert share_mod == False or ...
         assert qk_rms_norm == True
-        assert qk_rms_norm_cross == False
+        # assert qk_rms_norm_cross == False or ...
 
         self.resolution = resolution
         self.in_channels = in_channels
-        self.model_channels = model_channels
-        self.cond_channels = cond_channels
-        self.out_channels = out_channels
-        self.num_blocks = num_blocks
+        # self.model_channels = model_channels
+        # self.cond_channels = cond_channels
+        # self.out_channels = out_channels
+        # self.num_blocks = num_blocks
         self.num_heads = num_heads or model_channels // num_head_channels
-        self.mlp_ratio = mlp_ratio
+        # self.mlp_ratio = mlp_ratio
         self.patch_size = patch_size
-        self.pe_mode = pe_mode
-        self.use_fp16 = use_fp16
+        # self.pe_mode = pe_mode
+        # self.use_fp16 = use_fp16
         self.use_checkpoint = use_checkpoint
         self.share_mod = share_mod
-        self.qk_rms_norm = qk_rms_norm
-        self.qk_rms_norm_cross = qk_rms_norm_cross
+        # self.qk_rms_norm = qk_rms_norm
+        # self.qk_rms_norm_cross = qk_rms_norm_cross
         self.dtype = torch.float16 if use_fp16 else torch.float32
 
         self.t_embedder = TimestepEmbedder(model_channels)
@@ -115,7 +132,7 @@ class SparseStructureFlowModel(nn.Module):
                 nn.Linear(model_channels, 6 * model_channels, bias=True)
             )
 
-        if pe_mode == "ape":
+        if pe_mode == "ape": # True
             pos_embedder = AbsolutePositionEmbedder(model_channels, 3)
             coords = torch.meshgrid(*[torch.arange(res, device=self.device) for res in [resolution // patch_size] * 3], indexing='ij')
             coords = torch.stack(coords, dim=-1).reshape(-1, 3)
@@ -129,20 +146,20 @@ class SparseStructureFlowModel(nn.Module):
                 model_channels,
                 cond_channels,
                 num_heads=self.num_heads,
-                mlp_ratio=self.mlp_ratio,
+                mlp_ratio=mlp_ratio,
                 attn_mode='full',
                 use_checkpoint=self.use_checkpoint,
                 use_rope=(pe_mode == "rope"),
                 share_mod=share_mod,
-                qk_rms_norm=self.qk_rms_norm,
-                qk_rms_norm_cross=self.qk_rms_norm_cross,
+                qk_rms_norm=qk_rms_norm,
+                qk_rms_norm_cross=qk_rms_norm_cross,
             )
             for _ in range(num_blocks)
         ])
 
         self.out_layer = nn.Linear(model_channels, out_channels * patch_size**3)
 
-        self.initialize_weights()
+        # self.initialize_weights()
         if use_fp16:
             self.convert_to_fp16()
 
@@ -165,31 +182,31 @@ class SparseStructureFlowModel(nn.Module):
         """
         self.blocks.apply(convert_module_to_f32)
 
-    def initialize_weights(self) -> None:
-        # Initialize transformer layers:
-        def _basic_init(module):
-            if isinstance(module, nn.Linear):
-                torch.nn.init.xavier_uniform_(module.weight)
-                if module.bias is not None:
-                    nn.init.constant_(module.bias, 0)
-        self.apply(_basic_init)
+    # def initialize_weights(self) -> None:
+    #     # Initialize transformer layers:
+    #     def _basic_init(module):
+    #         if isinstance(module, nn.Linear):
+    #             torch.nn.init.xavier_uniform_(module.weight)
+    #             if module.bias is not None:
+    #                 nn.init.constant_(module.bias, 0)
+    #     self.apply(_basic_init)
 
-        # Initialize timestep embedding MLP:
-        nn.init.normal_(self.t_embedder.mlp[0].weight, std=0.02)
-        nn.init.normal_(self.t_embedder.mlp[2].weight, std=0.02)
+    #     # Initialize timestep embedding MLP:
+    #     nn.init.normal_(self.t_embedder.mlp[0].weight, std=0.02)
+    #     nn.init.normal_(self.t_embedder.mlp[2].weight, std=0.02)
 
-        # Zero-out adaLN modulation layers in DiT blocks:
-        if self.share_mod:
-            nn.init.constant_(self.adaLN_modulation[-1].weight, 0)
-            nn.init.constant_(self.adaLN_modulation[-1].bias, 0)
-        else:
-            for block in self.blocks:
-                nn.init.constant_(block.adaLN_modulation[-1].weight, 0)
-                nn.init.constant_(block.adaLN_modulation[-1].bias, 0)
+    #     # Zero-out adaLN modulation layers in DiT blocks:
+    #     if self.share_mod:
+    #         nn.init.constant_(self.adaLN_modulation[-1].weight, 0)
+    #         nn.init.constant_(self.adaLN_modulation[-1].bias, 0)
+    #     else:
+    #         for block in self.blocks:
+    #             nn.init.constant_(block.adaLN_modulation[-1].weight, 0)
+    #             nn.init.constant_(block.adaLN_modulation[-1].bias, 0)
 
-        # Zero-out output layers:
-        nn.init.constant_(self.out_layer.weight, 0)
-        nn.init.constant_(self.out_layer.bias, 0)
+    #     # Zero-out output layers:
+    #     nn.init.constant_(self.out_layer.weight, 0)
+    #     nn.init.constant_(self.out_layer.bias, 0)
 
     def forward(self, x: torch.Tensor, t: torch.Tensor, cond: torch.Tensor) -> torch.Tensor:
         assert [*x.shape] == [x.shape[0], self.in_channels, *[self.resolution] * 3], \
@@ -197,7 +214,7 @@ class SparseStructureFlowModel(nn.Module):
 
         h2 = patchify(x, self.patch_size)
         h2 = h2.view(*h2.shape[:2], -1).permute(0, 2, 1).contiguous()
-        h2 = self.input_layer(h2.type(self.dtype)) # xxxx_debug
+        h2 = self.input_layer(h2.type(self.dtype))
         h2 = h2 + self.pos_emb[None] # cuda, half float ...
 
         t_emb = self.t_embedder.float()(t)
@@ -208,11 +225,10 @@ class SparseStructureFlowModel(nn.Module):
         cond = cond.type(self.dtype)
         for block in self.blocks:
             h2 = block.float()(h2.float(), t_emb.float(), cond.float()).type(self.dtype)
-        # for block in self.blocks: h2 = block.float()(h2.float(), t_emb.float(), cond.float()).type(self.dtype)
 
         h2 = h2.type(x.dtype)
         h2 = F.layer_norm(h2, h2.shape[-1:])
-        h2 = self.out_layer(h2.type(self.dtype)) # xxxx_debug
+        h2 = self.out_layer(h2.type(self.dtype))
 
         h2 = h2.permute(0, 2, 1).view(h2.shape[0], h2.shape[2], *[self.resolution // self.patch_size] * 3)
         h2 = unpatchify(h2, self.patch_size).contiguous()
