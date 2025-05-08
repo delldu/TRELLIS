@@ -232,7 +232,6 @@ class SparseStructureDecoder(nn.Module):
         use_fp16: bool = False,
     ):
         super().__init__()
-        # xxxx_debug
         assert out_channels == 1
         assert latent_channels == 8
         assert num_res_blocks == 2
@@ -241,11 +240,6 @@ class SparseStructureDecoder(nn.Module):
         # assert norm_type == 'layer'
         assert use_fp16 == True
 
-        # self.out_channels = out_channels
-        # self.latent_channels = latent_channels
-        # self.num_res_blocks = num_res_blocks
-        # self.channels = channels
-        # self.num_res_blocks_middle = num_res_blocks_middle
         self.norm_type = norm_type
         self.use_fp16 = use_fp16
         self.dtype = torch.float16 if use_fp16 else torch.float32

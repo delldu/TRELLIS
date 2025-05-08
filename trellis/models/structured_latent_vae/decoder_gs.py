@@ -6,7 +6,6 @@ from ...modules import sparse as sp
 from ...utils.random_utils import hammersley_sequence
 from .base import SparseTransformerBase
 from ...representations import Gaussian
-from ..sparse_elastic_mixin import SparseTransformerElasticMixin
 import pdb
 
 class SLatGaussianDecoder(SparseTransformerBase):
@@ -47,13 +46,13 @@ class SLatGaussianDecoder(SparseTransformerBase):
         # assert latent_channels == 8
         # assert num_blocks == 12
         # assert num_heads == 12
-        # assert num_head_channels == 64
-        # assert mlp_ratio == 4
+        assert num_head_channels == 64
+        assert mlp_ratio == 4
         # assert attn_mode == 'swin'
         # assert window_size == 8
-        # assert pe_mode == 'ape'
-        # assert use_fp16 == True
-        # assert use_checkpoint == False
+        assert pe_mode == 'ape'
+        assert use_fp16 == True
+        assert use_checkpoint == False
         # assert qk_rms_norm == False
         
         # representation_config = {'lr': {'_xyz': 1.0, '_features_dc': 1.0, 
@@ -136,10 +135,3 @@ class SLatGaussianDecoder(SparseTransformerBase):
         h = self.out_layer.float()(h)
         return self.to_representation(h)
     
-
-# class ElasticSLatGaussianDecoder(SparseTransformerElasticMixin, SLatGaussianDecoder):
-#     """
-#     Slat VAE Gaussian decoder with elastic memory management.
-#     Used for training with low VRAM.
-#     """
-#     pass

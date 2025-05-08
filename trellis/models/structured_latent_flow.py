@@ -21,7 +21,6 @@ class SparseResBlock3d(nn.Module):
         upsample: bool = False,
     ):
         super().__init__()
-        #pdb.set_trace()
 
         self.channels = channels
         self.emb_channels = emb_channels
@@ -112,7 +111,6 @@ class SLatFlowModel(nn.Module):
         qk_rms_norm_cross: bool = False,
     ):
         super().__init__()
-        # xxxx_debug
         assert resolution == 64
         assert in_channels == 8
         assert model_channels == 1024
@@ -133,24 +131,12 @@ class SLatFlowModel(nn.Module):
         assert qk_rms_norm == True
         # assert qk_rms_norm_cross == False or ...
 
-        # self.resolution = resolution
         self.in_channels = in_channels # keep !!!
-        # self.model_channels = model_channels
-        # self.cond_channels = cond_channels
         self.out_channels = out_channels
-        # self.num_blocks = num_blocks
         self.num_heads = num_heads or model_channels // num_head_channels
-        # self.mlp_ratio = mlp_ratio
-        # self.patch_size = patch_size
-        # self.num_io_res_blocks = num_io_res_blocks
-        # self.io_block_channels = io_block_channels
         self.pe_mode = pe_mode
-        # self.use_fp16 = use_fp16
-        # self.use_checkpoint = use_checkpoint
         self.use_skip_connection = use_skip_connection
         self.share_mod = share_mod
-        # self.qk_rms_norm = qk_rms_norm
-        # self.qk_rms_norm_cross = qk_rms_norm_cross
         self.dtype = torch.float16 if use_fp16 else torch.float32
 
         if io_block_channels is not None: # True
@@ -263,7 +249,6 @@ class SLatFlowModel(nn.Module):
         if self.share_mod: # False
             t_emb = self.adaLN_modulation(t_emb)
 
-        # pdb.set_trace()
         t_emb = t_emb.type(self.dtype)
         cond = cond.type(self.dtype)
 
@@ -273,13 +258,11 @@ class SLatFlowModel(nn.Module):
             h2 = block(h2, t_emb)
             skips.append(h2.feats)
 
-        # pdb.set_trace()
         if self.pe_mode == "ape": # True
             h2 = h2 + self.pos_embedder(h2.coords[:, 1:]).type(self.dtype)
         for block in self.blocks:
             h2 = block(h2, t_emb, cond)
 
-        # pdb.set_trace()
         # unpack with output blocks
         for block, skip in zip(self.out_blocks, reversed(skips)):
             if self.use_skip_connection: # True
@@ -287,19 +270,7 @@ class SLatFlowModel(nn.Module):
             else:
                 h2 = block(h2, t_emb)
 
-        # pdb.set_trace()
-
         h2 = h2.replace(F.layer_norm(h2.feats, h2.feats.shape[-1:]))
         h2 = self.out_layer.float()(h2.type(x.dtype))
 
-        # pdb.set_trace()
-
         return h2
-    
-
-# class ElasticSLatFlowModel(SparseTransformerElasticMixin, SLatFlowModel):
-#     """
-#     SLat Flow Model with elastic memory management.
-#     Used for training with low VRAM.
-#     """
-#     pass

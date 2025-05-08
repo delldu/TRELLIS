@@ -45,31 +45,24 @@ class SparseTransformerBase(nn.Module):
         qk_rms_norm: bool = False,
     ):
         super().__init__()
-        # xxxx_debug
-        # # assert in_channels == 8
-        # # assert model_channels == 768
-        # # assert num_blocks == 12
-        # # assert num_heads == 12
-        # # assert num_head_channels == 64
-        # # assert mlp_ratio == 4
-        # # assert attn_mode == 'swin'
-        # # assert window_size == 8
-        # # assert pe_mode == 'ape'
-        # assert use_fp16 == True
-        # assert use_checkpoint == False
-        # # assert qk_rms_norm == False
+        # assert in_channels == 8
+        # assert model_channels == 768
+        # assert num_blocks == 12
+        # assert num_heads == 12
+        assert num_head_channels == 64
+        assert mlp_ratio == 4
+        # assert attn_mode == 'swin'
+        # assert window_size == 8
+        assert pe_mode == 'ape'
+        assert use_fp16 == True
+        assert use_checkpoint == False
+        # assert qk_rms_norm == False
 
-        # self.in_channels = in_channels
-        # self.model_channels = model_channels
         self.num_blocks = num_blocks
         self.window_size = window_size
         self.num_heads = num_heads or model_channels // num_head_channels
-        # self.mlp_ratio = mlp_ratio
         self.attn_mode = attn_mode # 'swin'
         self.pe_mode = pe_mode # "ape"
-        # self.use_fp16 = use_fp16
-        # self.use_checkpoint = use_checkpoint
-        # self.qk_rms_norm = qk_rms_norm
         self.dtype = torch.float16 if use_fp16 else torch.float32
 
         if pe_mode == "ape": # True
@@ -113,6 +106,7 @@ class SparseTransformerBase(nn.Module):
         self.blocks.apply(convert_module_to_f32)
 
     def forward(self, x: sp.SparseTensor) -> sp.SparseTensor:
+        # ==> pdb.set_trace()
         h2 = self.input_layer.float()(x)
         if self.pe_mode == "ape": # True
             h2 = h2 + self.pos_embedder(x.coords[:, 1:])

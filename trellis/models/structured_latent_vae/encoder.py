@@ -4,7 +4,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 from ...modules import sparse as sp
 from .base import SparseTransformerBase
-from ..sparse_elastic_mixin import SparseTransformerElasticMixin
 import pdb
 
 class SLatEncoder(SparseTransformerBase):
@@ -66,9 +65,3 @@ class SLatEncoder(SparseTransformerBase):
         else:
             return z
         
-
-# class ElasticSLatEncoder(SparseTransformerElasticMixin, SLatEncoder):
-#     """
-#     SLat VAE encoder with elastic memory management.
-#     Used for training with low VRAM.
-#     """
