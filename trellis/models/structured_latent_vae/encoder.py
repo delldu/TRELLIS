@@ -42,16 +42,9 @@ class SLatEncoder(SparseTransformerBase):
         self.resolution = resolution
         self.out_layer = sp.SparseLinear(model_channels, 2 * latent_channels)
 
-        # self.initialize_weights()
         if use_fp16:
             self.convert_to_fp16()
         # pdb.set_trace()
-
-    # def initialize_weights(self) -> None:
-    #     super().initialize_weights()
-    #     # Zero-out output layers:
-    #     nn.init.constant_(self.out_layer.weight, 0)
-    #     nn.init.constant_(self.out_layer.bias, 0)
 
     def forward(self, x: sp.SparseTensor, sample_posterior=True, return_raw=False):
         h = super().forward(x)
@@ -74,8 +67,8 @@ class SLatEncoder(SparseTransformerBase):
             return z
         
 
-class ElasticSLatEncoder(SparseTransformerElasticMixin, SLatEncoder):
-    """
-    SLat VAE encoder with elastic memory management.
-    Used for training with low VRAM.
-    """
+# class ElasticSLatEncoder(SparseTransformerElasticMixin, SLatEncoder):
+#     """
+#     SLat VAE encoder with elastic memory management.
+#     Used for training with low VRAM.
+#     """

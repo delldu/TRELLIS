@@ -9,7 +9,6 @@ from ..modules.norm import LayerNorm32
 from ..modules import sparse as sp
 from ..modules.sparse.transformer import ModulatedSparseTransformerCrossBlock
 from .sparse_structure_flow import TimestepEmbedder
-# from .sparse_elastic_mixin import SparseTransformerElasticMixin
 import pdb
 
 class SparseResBlock3d(nn.Module):
@@ -231,7 +230,6 @@ class SLatFlowModel(nn.Module):
             
         self.out_layer = sp.SparseLinear(model_channels if io_block_channels is None else io_block_channels[0], out_channels)
 
-        # self.initialize_weights()
         if use_fp16:
             self.convert_to_fp16()
 
@@ -258,31 +256,6 @@ class SLatFlowModel(nn.Module):
         self.blocks.apply(convert_module_to_f32)
         self.out_blocks.apply(convert_module_to_f32)
 
-    # def initialize_weights(self) -> None:
-    #     # Initialize transformer layers:
-    #     def _basic_init(module):
-    #         if isinstance(module, nn.Linear):
-    #             torch.nn.init.xavier_uniform_(module.weight)
-    #             if module.bias is not None:
-    #                 nn.init.constant_(module.bias, 0)
-    #     self.apply(_basic_init)
-
-    #     # Initialize timestep embedding MLP:
-    #     nn.init.normal_(self.t_embedder.mlp[0].weight, std=0.02)
-    #     nn.init.normal_(self.t_embedder.mlp[2].weight, std=0.02)
-
-    #     # Zero-out adaLN modulation layers in DiT blocks:
-    #     if self.share_mod:
-    #         nn.init.constant_(self.adaLN_modulation[-1].weight, 0)
-    #         nn.init.constant_(self.adaLN_modulation[-1].bias, 0)
-    #     else:
-    #         for block in self.blocks:
-    #             nn.init.constant_(block.adaLN_modulation[-1].weight, 0)
-    #             nn.init.constant_(block.adaLN_modulation[-1].bias, 0)
-
-    #     # Zero-out output layers:
-    #     nn.init.constant_(self.out_layer.weight, 0)
-    #     nn.init.constant_(self.out_layer.bias, 0)
 
     def forward(self, x: sp.SparseTensor, t: torch.Tensor, cond: torch.Tensor) -> sp.SparseTensor:
         h2 = self.input_layer.float()(x).type(self.dtype)

@@ -67,15 +67,9 @@ class SLatGaussianDecoder(SparseTransformerBase):
         self.out_layer = sp.SparseLinear(model_channels, self.out_channels)
         self._build_perturbation()
 
-        # self.initialize_weights()
         if use_fp16:
             self.convert_to_fp16()
 
-    # def initialize_weights(self) -> None:
-    #     super().initialize_weights()
-    #     # Zero-out output layers:
-    #     nn.init.constant_(self.out_layer.weight, 0)
-    #     nn.init.constant_(self.out_layer.bias, 0)
 
     def _build_perturbation(self) -> None:
         perturbation = [hammersley_sequence(3, i, self.rep_config['num_gaussians']) for i in range(self.rep_config['num_gaussians'])]
@@ -143,9 +137,9 @@ class SLatGaussianDecoder(SparseTransformerBase):
         return self.to_representation(h)
     
 
-class ElasticSLatGaussianDecoder(SparseTransformerElasticMixin, SLatGaussianDecoder):
-    """
-    Slat VAE Gaussian decoder with elastic memory management.
-    Used for training with low VRAM.
-    """
-    pass
+# class ElasticSLatGaussianDecoder(SparseTransformerElasticMixin, SLatGaussianDecoder):
+#     """
+#     Slat VAE Gaussian decoder with elastic memory management.
+#     Used for training with low VRAM.
+#     """
+#     pass

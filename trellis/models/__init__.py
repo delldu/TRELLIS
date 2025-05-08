@@ -11,10 +11,10 @@ __attributes = {
     'SLatGaussianDecoder': 'structured_latent_vae',
     'SLatRadianceFieldDecoder': 'structured_latent_vae',
     'SLatMeshDecoder': 'structured_latent_vae',
-    'ElasticSLatEncoder': 'structured_latent_vae',
-    'ElasticSLatGaussianDecoder': 'structured_latent_vae',
-    'ElasticSLatRadianceFieldDecoder': 'structured_latent_vae',
-    'ElasticSLatMeshDecoder': 'structured_latent_vae',
+    # 'ElasticSLatEncoder': 'structured_latent_vae',
+    # 'ElasticSLatGaussianDecoder': 'structured_latent_vae',
+    # 'ElasticSLatRadianceFieldDecoder': 'structured_latent_vae',
+    # 'ElasticSLatMeshDecoder': 'structured_latent_vae',
     
     'SLatFlowModel': 'structured_latent_flow',
     # 'ElasticSLatFlowModel': 'structured_latent_flow',
@@ -89,10 +89,10 @@ if __name__ == '__main__':
         SLatGaussianDecoder,
         SLatRadianceFieldDecoder,
         SLatMeshDecoder,
-        ElasticSLatEncoder,
-        ElasticSLatGaussianDecoder,
-        ElasticSLatRadianceFieldDecoder,
-        ElasticSLatMeshDecoder,
+        # ElasticSLatEncoder,
+        # ElasticSLatGaussianDecoder,
+        # ElasticSLatRadianceFieldDecoder,
+        # ElasticSLatMeshDecoder,
     )
     
     from .structured_latent_flow import (

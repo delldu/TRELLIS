@@ -112,15 +112,6 @@ class SparseTransformerBase(nn.Module):
         """
         self.blocks.apply(convert_module_to_f32)
 
-    # def initialize_weights(self) -> None:
-    #     # Initialize transformer layers:
-    #     def _basic_init(module):
-    #         if isinstance(module, nn.Linear):
-    #             torch.nn.init.xavier_uniform_(module.weight)
-    #             if module.bias is not None:
-    #                 nn.init.constant_(module.bias, 0)
-    #     self.apply(_basic_init)
-
     def forward(self, x: sp.SparseTensor) -> sp.SparseTensor:
         h2 = self.input_layer.float()(x)
         if self.pe_mode == "ape": # True

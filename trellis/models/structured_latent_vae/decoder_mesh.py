@@ -163,15 +163,8 @@ class SLatMeshDecoder(SparseTransformerBase):
         ])
         self.out_layer = sp.SparseLinear(model_channels // 8, self.out_channels)
 
-        # self.initialize_weights()
         if use_fp16:
             self.convert_to_fp16()
-
-    # def initialize_weights(self) -> None:
-    #     super().initialize_weights()
-    #     # Zero-out output layers:
-    #     nn.init.constant_(self.out_layer.weight, 0)
-    #     nn.init.constant_(self.out_layer.bias, 0)
 
     def convert_to_fp16(self) -> None:
         """
@@ -216,9 +209,9 @@ class SLatMeshDecoder(SparseTransformerBase):
         return self.to_representation(h2)
     
 
-class ElasticSLatMeshDecoder(SparseTransformerElasticMixin, SLatMeshDecoder):
-    """
-    Slat VAE Mesh decoder with elastic memory management.
-    Used for training with low VRAM.
-    """
-    pass
+# class ElasticSLatMeshDecoder(SparseTransformerElasticMixin, SLatMeshDecoder):
+#     """
+#     Slat VAE Mesh decoder with elastic memory management.
+#     Used for training with low VRAM.
+#     """
+#     pass

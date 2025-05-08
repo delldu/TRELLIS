@@ -3,6 +3,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
+
 from ..modules.utils import convert_module_to_f16, convert_module_to_f32
 from ..modules.transformer import AbsolutePositionEmbedder, ModulatedTransformerCrossBlock
 from ..modules.spatial import patchify, unpatchify
@@ -159,7 +160,6 @@ class SparseStructureFlowModel(nn.Module):
 
         self.out_layer = nn.Linear(model_channels, out_channels * patch_size**3)
 
-        # self.initialize_weights()
         if use_fp16:
             self.convert_to_fp16()
 
@@ -181,32 +181,6 @@ class SparseStructureFlowModel(nn.Module):
         Convert the torso of the model to float32.
         """
         self.blocks.apply(convert_module_to_f32)
-
-    # def initialize_weights(self) -> None:
-    #     # Initialize transformer layers:
-    #     def _basic_init(module):
-    #         if isinstance(module, nn.Linear):
-    #             torch.nn.init.xavier_uniform_(module.weight)
-    #             if module.bias is not None:
-    #                 nn.init.constant_(module.bias, 0)
-    #     self.apply(_basic_init)
-
-    #     # Initialize timestep embedding MLP:
-    #     nn.init.normal_(self.t_embedder.mlp[0].weight, std=0.02)
-    #     nn.init.normal_(self.t_embedder.mlp[2].weight, std=0.02)
-
-    #     # Zero-out adaLN modulation layers in DiT blocks:
-    #     if self.share_mod:
-    #         nn.init.constant_(self.adaLN_modulation[-1].weight, 0)
-    #         nn.init.constant_(self.adaLN_modulation[-1].bias, 0)
-    #     else:
-    #         for block in self.blocks:
-    #             nn.init.constant_(block.adaLN_modulation[-1].weight, 0)
-    #             nn.init.constant_(block.adaLN_modulation[-1].bias, 0)
-
-    #     # Zero-out output layers:
-    #     nn.init.constant_(self.out_layer.weight, 0)
-    #     nn.init.constant_(self.out_layer.bias, 0)
 
     def forward(self, x: torch.Tensor, t: torch.Tensor, cond: torch.Tensor) -> torch.Tensor:
         assert [*x.shape] == [x.shape[0], self.in_channels, *[self.resolution] * 3], \
