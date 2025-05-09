@@ -2,9 +2,11 @@ from typing import *
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from ..modules.norm import GroupNorm32, ChannelLayerNorm32
+# from ..modules.norm import GroupNorm32, ChannelLayerNorm32
+from ..modules.norm import ChannelLayerNorm32
 from ..modules.spatial import pixel_shuffle_3d
-from ..modules.utils import zero_module, convert_module_to_f16, convert_module_to_f32
+# from ..modules.utils import zero_module, convert_module_to_f16, convert_module_to_f32
+from ..modules.utils import convert_module_to_f16, convert_module_to_f32
 import todos
 import pdb
 
@@ -33,12 +35,13 @@ def norm_layer(norm_type: str, *args, **kwargs) -> nn.Module:
 
     assert norm_type == "layer"
 
-    if norm_type == "group":
-        return GroupNorm32(32, *args, **kwargs)
-    elif norm_type == "layer":
-        return ChannelLayerNorm32(*args, **kwargs)
-    else:
-        raise ValueError(f"Invalid norm type {norm_type}")
+    # if norm_type == "group":
+    #     return GroupNorm32(32, *args, **kwargs)
+    # elif norm_type == "layer":
+    #     return ChannelLayerNorm32(*args, **kwargs)
+    # else:
+    #     raise ValueError(f"Invalid norm type {norm_type}")
+    return ChannelLayerNorm32(*args, **kwargs)
 
 
 class ResBlock3d(nn.Module):
@@ -63,7 +66,8 @@ class ResBlock3d(nn.Module):
         self.norm1 = norm_layer(norm_type, channels)
         self.norm2 = norm_layer(norm_type, out_channels)
         self.conv1 = nn.Conv3d(channels, out_channels, 3, padding=1)
-        self.conv2 = zero_module(nn.Conv3d(out_channels, out_channels, 3, padding=1))
+        # self.conv2 = zero_module(nn.Conv3d(out_channels, out_channels, 3, padding=1))
+        self.conv2 = nn.Conv3d(out_channels, out_channels, 3, padding=1)
         self.skip_connection = nn.Conv3d(channels, out_channels, 1) if channels != out_channels else nn.Identity()
     
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -116,21 +120,23 @@ class UpsampleBlock3d(nn.Module):
         # print(f"== UpsampleBlock3d: in_channels={in_channels}, out_channels={out_channels}, mode={mode}")
         # == UpsampleBlock3d: in_channels=512, out_channels=128, mode=conv
         # == UpsampleBlock3d: in_channels=128, out_channels=32, mode=conv
-
-        assert mode == "conv"
-        # self.in_channels = in_channels
-        # self.out_channels = out_channels
-        if mode == "conv":
-            self.conv = nn.Conv3d(in_channels, out_channels*8, 3, padding=1)
-        elif mode == "nearest":
-            assert in_channels == out_channels, "Nearest mode requires in_channels to be equal to out_channels"
+        # assert mode == "conv"
+        # # self.in_channels = in_channels
+        # # self.out_channels = out_channels
+        # if mode == "conv":
+        #     self.conv = nn.Conv3d(in_channels, out_channels*8, 3, padding=1)
+        # elif mode == "nearest":
+        #     assert in_channels == out_channels, "Nearest mode requires in_channels to be equal to out_channels"
+        self.conv = nn.Conv3d(in_channels, out_channels*8, 3, padding=1)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        if hasattr(self, "conv"):
-            x = self.conv(x)
-            return pixel_shuffle_3d(x, 2)
-        else:
-            return F.interpolate(x, scale_factor=2, mode="nearest")
+        # if hasattr(self, "conv"):
+        #     x = self.conv(x)
+        #     return pixel_shuffle_3d(x, 2)
+        # else:
+        #     return F.interpolate(x, scale_factor=2, mode="nearest")
+        x = self.conv(x)
+        return pixel_shuffle_3d(x, 2)
         
 
 # class SparseStructureEncoder(nn.Module):

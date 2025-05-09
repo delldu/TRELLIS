@@ -7,12 +7,12 @@ class LayerNorm32(nn.LayerNorm):
         return super().forward(x.float()).type(x.dtype)
     
 
-class GroupNorm32(nn.GroupNorm):
-    """
-    A GroupNorm layer that converts to float32 before the forward pass.
-    """
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        return super().forward(x.float()).type(x.dtype)
+# class GroupNorm32(nn.GroupNorm):
+#     """
+#     A GroupNorm layer that converts to float32 before the forward pass.
+#     """
+#     def forward(self, x: torch.Tensor) -> torch.Tensor:
+#         return super().forward(x.float()).type(x.dtype)
     
     
 class ChannelLayerNorm32(LayerNorm32):

@@ -3,7 +3,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
-from ...modules.utils import zero_module, convert_module_to_f16, convert_module_to_f32
+# from ...modules.utils import zero_module, convert_module_to_f16, convert_module_to_f32
+from ...modules.utils import convert_module_to_f16, convert_module_to_f32
 from ...modules import sparse as sp
 from .base import SparseTransformerBase
 from ...representations.mesh import SparseFeatures2Mesh
@@ -50,7 +51,8 @@ class SparseSubdivideBlock3d(nn.Module):
             sp.SparseConv3d(channels, self.out_channels, 3, indice_key=f"res_{self.out_resolution}"),
             sp.SparseGroupNorm32(num_groups, self.out_channels),
             sp.SparseSiLU(),
-            zero_module(sp.SparseConv3d(self.out_channels, self.out_channels, 3, indice_key=f"res_{self.out_resolution}")),
+            # zero_module(sp.SparseConv3d(self.out_channels, self.out_channels, 3, indice_key=f"res_{self.out_resolution}")),
+            sp.SparseConv3d(self.out_channels, self.out_channels, 3, indice_key=f"res_{self.out_resolution}"),
         )
         
         if self.out_channels == channels:

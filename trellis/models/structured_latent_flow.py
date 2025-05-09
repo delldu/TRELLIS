@@ -3,7 +3,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
-from ..modules.utils import zero_module, convert_module_to_f16, convert_module_to_f32
+# from ..modules.utils import zero_module, convert_module_to_f16, convert_module_to_f32
+from ..modules.utils import convert_module_to_f16, convert_module_to_f32
 from ..modules.transformer import AbsolutePositionEmbedder
 from ..modules.norm import LayerNorm32
 from ..modules import sparse as sp
@@ -33,7 +34,8 @@ class SparseResBlock3d(nn.Module):
         self.norm1 = LayerNorm32(channels, elementwise_affine=True, eps=1e-6)
         self.norm2 = LayerNorm32(self.out_channels, elementwise_affine=False, eps=1e-6)
         self.conv1 = sp.SparseConv3d(channels, self.out_channels, 3)
-        self.conv2 = zero_module(sp.SparseConv3d(self.out_channels, self.out_channels, 3))
+        # self.conv2 = zero_module(sp.SparseConv3d(self.out_channels, self.out_channels, 3))
+        self.conv2 = sp.SparseConv3d(self.out_channels, self.out_channels, 3)
         self.emb_layers = nn.Sequential(
             nn.SiLU(),
             nn.Linear(emb_channels, 2 * self.out_channels, bias=True),
