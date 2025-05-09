@@ -38,18 +38,21 @@ class SLatGaussianDecoder(SparseTransformerBase):
             use_fp16=use_fp16,
             qk_rms_norm=qk_rms_norm,
         )
-        # assert resolution == 64
-        # assert model_channels == 768
-        # assert latent_channels == 8
-        # assert num_blocks == 12
-        # assert num_heads == 12
+        # print(f"SLatGaussianDecoder: resolution={resolution}, model_channels={model_channels}, latent_channels={latent_channels}, num_blocks={num_blocks}, num_heads={num_heads}, attn_mode={attn_mode}, window_size={window_size}, qk_rms_norm={qk_rms_norm}")
+        # SLatGaussianDecoder: resolution=64, model_channels=768, latent_channels=8, num_blocks=12, num_heads=12, attn_mode=swin, window_size=8, qk_rms_norm=False
+
+        assert resolution == 64
+        assert model_channels == 768
+        assert latent_channels == 8
+        assert num_blocks == 12
+        assert num_heads == 12
         assert num_head_channels == 64
         assert mlp_ratio == 4
-        # assert attn_mode == 'swin'
-        # assert window_size == 8
+        assert attn_mode == 'swin'
+        assert window_size == 8
         assert pe_mode == 'ape'
         assert use_fp16 == True
-        # assert qk_rms_norm == False
+        assert qk_rms_norm == False
         
         # representation_config = {'lr': {'_xyz': 1.0, '_features_dc': 1.0, 
         #     '_opacity': 1.0, '_scaling': 1.0, '_rotation': 0.1}, 
@@ -125,9 +128,23 @@ class SLatGaussianDecoder(SparseTransformerBase):
         return ret
 
     def forward(self, x: sp.SparseTensor) -> List[Gaussian]:
-        h = super().forward(x)
-        h = h.type(x.dtype)
-        h = h.replace(F.layer_norm(h.feats, h.feats.shape[-1:]))
-        h = self.out_layer.float()(h)
-        return self.to_representation(h)
+        # tensor [x data.coords] size: [14955, 4], min: 0.0, max: 63.0, mean: 23.262018
+        # tensor [x data.features] size: [14955, 8], min: -9.592283, max: 9.934357, mean: -0.068937
+
+        h2 = super().forward(x)
+        h2 = h2.type(x.dtype)
+        h2 = h2.replace(F.layer_norm(h2.feats, h2.feats.shape[-1:]))
+        h2 = self.out_layer.float()(h2)
+        h2 = self.to_representation(h2)
+
+        # h2 -- [<trellis.representations.gaussian.gaussian_model.Gaussian object at 0x7f6db8dae310>]
+        # h2[0].get_xyz.size() -- [478560, 3]
+        # h2[0].get_features.size() -- [478560, 1, 3]
+        # h2[0].get_scaling.size() -- [478560, 3]
+        # h2[0].get_rotation.size() -- [478560, 4]
+        # h2[0].sh_degree === 0
+        # (Pdb) h2[0].aabb.size() -- [6]
+        # (Pdb) h2[0].aabb -- tensor([-0.500000, -0.500000, -0.500000,  1.000000,  1.000000,  1.000000], device='cuda:0')
+
+        return h2
     

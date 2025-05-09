@@ -110,6 +110,9 @@ class SLatFlowModel(nn.Module):
         qk_rms_norm_cross: bool = False,
     ):
         super().__init__()
+        # print(f"SLatFlowModel: num_head_channels={num_head_channels}, use_skip_connection={use_skip_connection}, share_mod={share_mod}, qk_rms_norm_cross={qk_rms_norm_cross}")
+        # SLatFlowModel: num_head_channels=64, use_skip_connection=True, share_mod=False, qk_rms_norm_cross=False
+
         assert resolution == 64
         assert in_channels == 8
         assert model_channels == 1024
@@ -117,19 +120,19 @@ class SLatFlowModel(nn.Module):
         assert out_channels == 8
         assert num_blocks == 24
         assert num_heads == 16
-        # assert num_head_channels == 64 or ...
+        assert num_head_channels == 64
         assert mlp_ratio == 4
         assert patch_size == 2
         assert num_io_res_blocks == 2
         assert io_block_channels == [128]
         assert pe_mode == 'ape'
         assert use_fp16 == True
-        # assert use_skip_connection == True or ...
-        # assert share_mod == False or ...
+        assert use_skip_connection == True
+        assert share_mod == False
         assert qk_rms_norm == True
-        # assert qk_rms_norm_cross == False or ...
+        assert qk_rms_norm_cross == False
 
-        self.in_channels = in_channels # keep !!!
+        self.in_channels = in_channels # keep it !!!
         self.out_channels = out_channels
         self.num_heads = num_heads or model_channels // num_head_channels
         self.pe_mode = pe_mode
@@ -239,8 +242,11 @@ class SLatFlowModel(nn.Module):
         self.blocks.apply(convert_module_to_f32)
         self.out_blocks.apply(convert_module_to_f32)
 
-
+    # xxxx_debug
     def forward(self, x: sp.SparseTensor, t: torch.Tensor, cond: torch.Tensor) -> sp.SparseTensor:
+        # tensor [x data.coords] size: [14955, 4], min: 0.0, max: 63.0, mean: 23.262018
+        # tensor [x data.features] size: [14955, 8], min: -4.452163, max: 4.218491, mean: -0.000569
+
         h2 = self.input_layer.float()(x).type(self.dtype)
         t_emb = self.t_embedder.float()(t)
         if self.share_mod: # False
@@ -270,4 +276,7 @@ class SLatFlowModel(nn.Module):
         h2 = h2.replace(F.layer_norm(h2.feats, h2.feats.shape[-1:]))
         h2 = self.out_layer.float()(h2.type(x.dtype))
 
+        # tensor [h2 data.coords] size: [14955, 4], min: 0.0, max: 63.0, mean: 23.262018
+        # tensor [h2 data.features] size: [14955, 8], min: -6.325896, max: 5.703651, mean: -0.000702
+        
         return h2

@@ -215,7 +215,7 @@ class TrellisImageTo3DPipeline(Pipeline):
         noise = torch.randn(num_samples, flow_model.in_channels, reso, reso, reso).to(flow_model.device)
         sampler_params = {**self.sparse_structure_sampler_params, **sampler_params}
 
-
+        # self.sparse_structure_sampler -- trellis.pipelines.samplers.flow_euler.FlowEulerGuidanceIntervalSampler
         z_s = self.sparse_structure_sampler.sample(flow_model, noise, **cond, **sampler_params, verbose=True).samples
         self.unload_models(['sparse_structure_flow_model',])
 
@@ -277,7 +277,6 @@ class TrellisImageTo3DPipeline(Pipeline):
         flow_model = self.load_model('slat_flow_model') # SLatFlowModel
         noise = sp.SparseTensor(
             feats=torch.randn(coords.shape[0], flow_model.in_channels).to(flow_model.device), # (14955, 8)
-
             coords=coords,
         )
         sampler_params = {**self.slat_sampler_params, **sampler_params}

@@ -107,19 +107,24 @@ class SLatMeshDecoder(SparseTransformerBase):
             use_fp16=use_fp16,
             qk_rms_norm=qk_rms_norm,
         )
-        # assert resolution == 64
-        # assert model_channels == 768
-        # assert latent_channels == 8
-        # assert num_blocks == 12
-        # assert num_heads == 12
+        # print(f"SLatMeshDecoder: resolution={resolution}, model_channels={model_channels}, latent_channels={latent_channels}, num_blocks={num_blocks}, num_heads={num_heads}, window_size={window_size}, pe_mode={pe_mode}, qk_rms_norm={qk_rms_norm}, representation_config={representation_config}")
+        # SLatMeshDecoder: resolution=64, model_channels=768, latent_channels=8, num_blocks=12, num_heads=12, window_size=8, 
+        #pe_mode=ape, qk_rms_norm=False, representation_config={'use_color': True}
+
+        assert resolution == 64
+        assert model_channels == 768
+        assert latent_channels == 8
+        assert num_blocks == 12
+        assert num_heads == 12
         assert num_head_channels == 64
         assert mlp_ratio == 4
         assert attn_mode == 'swin'
-        # assert window_size == 8
-        # assert pe_mode == 'ape'
+        assert window_size == 8
+        assert pe_mode == 'ape'
         assert use_fp16 == True
-        # assert qk_rms_norm == False
-        # representation_config = {'use_color': True}
+        assert qk_rms_norm == False
+        representation_config = {'use_color': True}
+        
         self.rep_config = representation_config
 
         self.mesh_extractor = SparseFeatures2Mesh(res=resolution*4, use_color=self.rep_config.get('use_color', False))
@@ -173,6 +178,9 @@ class SLatMeshDecoder(SparseTransformerBase):
         return ret
 
     def forward(self, x: sp.SparseTensor):
+        # tensor [x data.coords] size: [14955, 4], min: 0.0, max: 63.0, mean: 23.262018
+        # tensor [x data.features] size: [14955, 8], min: -9.592283, max: 9.934357, mean: -0.068937
+
         h2 = super().forward(x)
 
         for block in self.upsample: # SparseSubdivideBlock3d
@@ -182,5 +190,14 @@ class SLatMeshDecoder(SparseTransformerBase):
 
         h2 = self.out_layer.float()(h2)
 
-        return self.to_representation(h2)
+        h2 = self.to_representation(h2)
+
+        # h2 -- [<trellis.representations.mesh.cube2mesh.MeshExtractResult object at 0x7f6db8dae1f0>]
+        # tensor [h2[0].vertices] size: [298216, 3], min: -0.500411, max: 0.49844, mean: -0.0098
+        # tensor [h2[0].faces] size: [596762, 3], min: 0.0, max: 298215.0, mean: 148879.0
+        # tensor [h2[0].vertex_attrs] size: [298216, 6], min: 2.9e-05, max: 0.999892, mean: 0.34404
+        # tensor [h2[0].face_normal] size: [596762, 3, 3], min: -1.0, max: 1.0, mean: 0.012801
+        # h2[0].res === 256
+        # h2[0].success === True
+        return h2
     

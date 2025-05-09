@@ -91,6 +91,9 @@ class SparseStructureFlowModel(nn.Module):
         qk_rms_norm_cross: bool = False,
     ):
         super().__init__()
+        # print(f"SparseStructureFlowModel: num_head_channels={num_head_channels}, share_mod={share_mod}, qk_rms_norm_cross={qk_rms_norm_cross}")
+        # SparseStructureFlowModel: num_head_channels=64, share_mod=False, qk_rms_norm_cross=False
+
         assert resolution == 16
         assert in_channels == 8
         assert model_channels == 1024
@@ -98,33 +101,24 @@ class SparseStructureFlowModel(nn.Module):
         assert out_channels == 8
         assert num_blocks == 24
         assert num_heads == 16
-        # assert num_head_channels == 64 or ...
+        assert num_head_channels == 64
         assert mlp_ratio == 4
         assert patch_size == 1
         assert pe_mode == 'ape'
         assert use_fp16 == True
-        # assert share_mod == False or ...
+        assert share_mod == False
         assert qk_rms_norm == True
-        # assert qk_rms_norm_cross == False or ...
+        assert qk_rms_norm_cross == False
 
         self.resolution = resolution
         self.in_channels = in_channels
-        # self.model_channels = model_channels
-        # self.cond_channels = cond_channels
-        # self.out_channels = out_channels
-        # self.num_blocks = num_blocks
         self.num_heads = num_heads or model_channels // num_head_channels
-        # self.mlp_ratio = mlp_ratio
         self.patch_size = patch_size
-        # self.pe_mode = pe_mode
-        # self.use_fp16 = use_fp16
         self.share_mod = share_mod
-        # self.qk_rms_norm = qk_rms_norm
-        # self.qk_rms_norm_cross = qk_rms_norm_cross
         self.dtype = torch.float16 if use_fp16 else torch.float32
 
         self.t_embedder = TimestepEmbedder(model_channels)
-        if share_mod:
+        if share_mod: # False
             self.adaLN_modulation = nn.Sequential(
                 nn.SiLU(),
                 nn.Linear(model_channels, 6 * model_channels, bias=True)
@@ -181,9 +175,15 @@ class SparseStructureFlowModel(nn.Module):
     def forward(self, x: torch.Tensor, t: torch.Tensor, cond: torch.Tensor) -> torch.Tensor:
         assert [*x.shape] == [x.shape[0], self.in_channels, *[self.resolution] * 3], \
                 f"Input shape mismatch, got {x.shape}, expected {[x.shape[0], self.in_channels, *[self.resolution] * 3]}"
+        # tensor [x] size: [1, 8, 16, 16, 16], min: -4.184124, max: 3.802687, mean: 0.000481
+        # tensor [t] size: [1], min: 1000.0, max: 1000.0, mean: 1000.0
+        # tensor [cond] size: [1, 1374, 1024], min: -25.644331, max: 15.487422, mean: 0.0
 
         h2 = patchify(x, self.patch_size)
+        # tensor [h2] size: [1, 8, 16, 16, 16], min: -4.184124, max: 3.802687, mean: 0.000481
         h2 = h2.view(*h2.shape[:2], -1).permute(0, 2, 1).contiguous()
+        # tensor [h2] size: [1, 4096, 8], min: -4.184124, max: 3.802687, mean: 0.000481
+
         h2 = self.input_layer(h2.type(self.dtype))
         h2 = h2 + self.pos_emb[None] # cuda, half float ...
 
@@ -202,5 +202,6 @@ class SparseStructureFlowModel(nn.Module):
 
         h2 = h2.permute(0, 2, 1).view(h2.shape[0], h2.shape[2], *[self.resolution // self.patch_size] * 3)
         h2 = unpatchify(h2, self.patch_size).contiguous()
+        # tensor [h2] size: [1, 8, 16, 16, 16], min: -4.324219, max: 3.896484, mean: -0.007871
 
         return h2

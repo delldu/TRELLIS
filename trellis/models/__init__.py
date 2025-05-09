@@ -13,7 +13,6 @@ __attributes = {
     'SLatMeshDecoder': 'structured_latent_vae',
     
     'SLatFlowModel': 'structured_latent_flow',
-    # 'ElasticSLatFlowModel': 'structured_latent_flow',
 }
 
 __submodules = []

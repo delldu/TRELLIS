@@ -17,6 +17,8 @@ from .render_utils import render_multiview
 from ..renderers import GaussianRenderer
 from ..representations import Strivec, Gaussian, MeshExtractResult
 
+import todos
+import pdb
 
 @torch.no_grad()
 def _fill_holes(
@@ -348,6 +350,7 @@ def bake_texture(
         masks = [m.flip(0) for m in masks]
         _uv = []
         _uv_dr = []
+        # xxxx_debug Texture baking (opt): UV
         for observation, view, projection in tqdm(zip(observations, views, projections), total=len(views), disable=not verbose, desc='Texture baking (opt): UV'):
             with torch.no_grad():
                 rast = utils3d.torch.rasterize_triangle_faces(
@@ -359,8 +362,8 @@ def bake_texture(
         texture = torch.nn.Parameter(torch.zeros((1, texture_size, texture_size, 3), dtype=torch.float32).cuda())
         optimizer = torch.optim.Adam([texture], betas=(0.5, 0.9), lr=1e-2)
 
-        def exp_anealing(optimizer, step, total_steps, start_lr, end_lr):
-            return start_lr * (end_lr / start_lr) ** (step / total_steps)
+        # def exp_anealing(optimizer, step, total_steps, start_lr, end_lr):
+        #     return start_lr * (end_lr / start_lr) ** (step / total_steps)
 
         def cosine_anealing(optimizer, step, total_steps, start_lr, end_lr):
             return end_lr + 0.5 * (start_lr - end_lr) * (1 + np.cos(np.pi * step / total_steps))
@@ -368,7 +371,8 @@ def bake_texture(
         def tv_loss(texture):
             return torch.nn.functional.l1_loss(texture[:, :-1, :, :], texture[:, 1:, :, :]) + \
                    torch.nn.functional.l1_loss(texture[:, :, :-1, :], texture[:, :, 1:, :])
-    
+
+        # xxxx_debug Texture baking (opt): optimizing
         total_steps = 2500
         with tqdm(total=total_steps, disable=not verbose, desc='Texture baking (opt): optimizing') as pbar:
             for step in range(total_steps):
@@ -509,8 +513,8 @@ def simplify_gs(
         {"params": new_gs._opacity, "lr": start_lr[3]},
     ], lr=start_lr[0])
     
-    def exp_anealing(optimizer, step, total_steps, start_lr, end_lr):
-            return start_lr * (end_lr / start_lr) ** (step / total_steps)
+    # def exp_anealing(optimizer, step, total_steps, start_lr, end_lr):
+    #         return start_lr * (end_lr / start_lr) ** (step / total_steps)
 
     def cosine_anealing(optimizer, step, total_steps, start_lr, end_lr):
         return end_lr + 0.5 * (start_lr - end_lr) * (1 + np.cos(np.pi * step / total_steps))

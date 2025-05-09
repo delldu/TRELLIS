@@ -118,7 +118,7 @@ class FlowEulerSampler(Sampler):
         # model -- SparseStructureFlowModel, cuda, torch.float16
         # model = model.float()
 
-        for t, t_prev in tqdm(t_pairs, desc="Sampling", disable=not verbose):
+        for t, t_prev in tqdm(t_pairs, desc="FlowEulerSampler Sampling", disable=not verbose):
             out = self.sample_once(model, sample, t, t_prev, cond, **kwargs)
 
             sample = out.pred_x_prev

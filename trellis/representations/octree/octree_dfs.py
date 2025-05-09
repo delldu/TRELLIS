@@ -1,7 +1,8 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
+import todos
+import pdb
 
 class DfsOctree:
     """
@@ -44,6 +45,8 @@ class DfsOctree:
             primitive_config={},
             device='cuda',
         ):
+        print(f"== DfsOctree: depth={depth}, aabb={aabb}, sh_degree={sh_degree}, primitive={primitive}, primitive_config={primitive_config}, device={device}")
+
         self.max_depth = depth
         self.aabb = torch.tensor(aabb, dtype=torch.float32, device=device)
         self.device = device

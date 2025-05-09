@@ -6,8 +6,9 @@ from PIL import Image
 
 from ..renderers import OctreeRenderer, GaussianRenderer, MeshRenderer
 from ..representations import Octree, Gaussian, MeshExtractResult
-from ..modules import sparse as sp
+# from ..modules import sparse as sp
 from .random_utils import sphere_hammersley_sequence
+import todos
 import pdb
 
 def yaw_pitch_r_fov_to_extrinsics_intrinsics(yaws, pitchs, rs, fovs):
@@ -21,6 +22,17 @@ def yaw_pitch_r_fov_to_extrinsics_intrinsics(yaws, pitchs, rs, fovs):
         fovs = [fovs] * len(yaws)
     extrinsics = []
     intrinsics = []
+
+    # yaws is list: len = 100
+    #     [item] value: '0.0'
+    #     [item] value: '3.141592653589793'
+    # pitchs is list: len = 100
+    #     [item] value: '-1.5707963267948966'
+    # rs is list: len = 100
+    #     [item] value: '2'
+    # fovs is list: len = 100
+    #     [item] value: '40'
+
     for yaw, pitch, r, fov in zip(yaws, pitchs, rs, fovs):
         fov = torch.deg2rad(torch.tensor(float(fov))).cuda()
         yaw = torch.tensor(float(yaw)).cuda()
@@ -40,10 +52,18 @@ def yaw_pitch_r_fov_to_extrinsics_intrinsics(yaws, pitchs, rs, fovs):
     if not is_list:
         extrinsics = extrinsics[0]
         intrinsics = intrinsics[0]
+
+    # extrinsics is list: len = 100
+    #     tensor [item] size: [4, 4], min: -0.0, max: 2.0, mean: 0.375
+    # intrinsics is list: len = 100
+    #     tensor [item] size: [3, 3], min: 0.0, max: 1.373739, mean: 0.527498
+
     return extrinsics, intrinsics
 
 
 def get_renderer(sample, **kwargs):
+    print("== get_renderer sample: type(sample)")
+
     if isinstance(sample, Octree):
         renderer = OctreeRenderer()
         renderer.rendering_options.resolution = kwargs.get('resolution', 512)
@@ -114,10 +134,10 @@ def render_multiview(sample, resolution=512, nviews=30):
     return res['color'], extrinsics, intrinsics
 
 
-def render_snapshot(samples, resolution=512, bg_color=(0, 0, 0), offset=(-16 / 180 * np.pi, 20 / 180 * np.pi), r=10, fov=8, **kwargs):
-    yaw = [0, np.pi/2, np.pi, 3*np.pi/2]
-    yaw_offset = offset[0]
-    yaw = [y + yaw_offset for y in yaw]
-    pitch = [offset[1] for _ in range(4)]
-    extrinsics, intrinsics = yaw_pitch_r_fov_to_extrinsics_intrinsics(yaw, pitch, r, fov)
-    return render_frames(samples, extrinsics, intrinsics, {'resolution': resolution, 'bg_color': bg_color}, **kwargs)
+# def render_snapshot(samples, resolution=512, bg_color=(0, 0, 0), offset=(-16 / 180 * np.pi, 20 / 180 * np.pi), r=10, fov=8, **kwargs):
+#     yaw = [0, np.pi/2, np.pi, 3*np.pi/2]
+#     yaw_offset = offset[0]
+#     yaw = [y + yaw_offset for y in yaw]
+#     pitch = [offset[1] for _ in range(4)]
+#     extrinsics, intrinsics = yaw_pitch_r_fov_to_extrinsics_intrinsics(yaw, pitch, r, fov)
+#     return render_frames(samples, extrinsics, intrinsics, {'resolution': resolution, 'bg_color': bg_color}, **kwargs)

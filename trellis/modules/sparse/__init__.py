@@ -47,10 +47,10 @@ import importlib
 
 __attributes = {
     'SparseTensor': 'basic',
-    'sparse_batch_broadcast': 'basic',
-    'sparse_batch_op': 'basic',
-    'sparse_cat': 'basic',
-    'sparse_unbind': 'basic',
+    # 'sparse_batch_broadcast': 'basic',
+    # 'sparse_batch_op': 'basic',
+    # 'sparse_cat': 'basic',
+    # 'sparse_unbind': 'basic',
     'SparseGroupNorm': 'norm',
     'SparseLayerNorm': 'norm',
     'SparseGroupNorm32': 'norm',
