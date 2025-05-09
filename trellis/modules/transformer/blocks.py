@@ -84,6 +84,8 @@ class TransformerBlock(nn.Module):
         ln_affine: bool = False,
     ):
         super().__init__()
+        print(f"== TransformerBlock: attn_mode={attn_mode}, use_rope={use_rope}, qk_rms_norm={qk_rms_norm}, share_mod={share_mod}, ln_affine={ln_affine}")
+
         self.norm1 = LayerNorm32(channels, elementwise_affine=ln_affine, eps=1e-6)
         self.norm2 = LayerNorm32(channels, elementwise_affine=ln_affine, eps=1e-6)
         self.attn = MultiHeadAttention(

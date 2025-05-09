@@ -1,3 +1,5 @@
+# https://zhuanlan.zhihu.com/p/30989191234
+
 import pdb
 import os
 os.environ['ATTN_BACKEND'] = 'xformers'   # Can be 'flash-attn' or 'xformers', default is 'flash-attn'

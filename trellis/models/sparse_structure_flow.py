@@ -112,7 +112,7 @@ class SparseStructureFlowModel(nn.Module):
 
         self.resolution = resolution
         self.in_channels = in_channels
-        self.num_heads = num_heads or model_channels // num_head_channels
+        # self.num_heads = num_heads or model_channels // num_head_channels
         self.patch_size = patch_size
         self.share_mod = share_mod
         self.dtype = torch.float16 if use_fp16 else torch.float32
@@ -137,7 +137,7 @@ class SparseStructureFlowModel(nn.Module):
             ModulatedTransformerCrossBlock(
                 model_channels,
                 cond_channels,
-                num_heads=self.num_heads,
+                num_heads=num_heads,
                 mlp_ratio=mlp_ratio,
                 attn_mode='full',
                 use_rope=(pe_mode == "rope"),
@@ -173,8 +173,8 @@ class SparseStructureFlowModel(nn.Module):
         self.blocks.apply(convert_module_to_f32)
 
     def forward(self, x: torch.Tensor, t: torch.Tensor, cond: torch.Tensor) -> torch.Tensor:
-        assert [*x.shape] == [x.shape[0], self.in_channels, *[self.resolution] * 3], \
-                f"Input shape mismatch, got {x.shape}, expected {[x.shape[0], self.in_channels, *[self.resolution] * 3]}"
+        # assert [*x.shape] == [x.shape[0], self.in_channels, *[self.resolution] * 3], \
+        #         f"Input shape mismatch, got {x.shape}, expected {[x.shape[0], self.in_channels, *[self.resolution] * 3]}"
         # tensor [x] size: [1, 8, 16, 16, 16], min: -4.184124, max: 3.802687, mean: 0.000481
         # tensor [t] size: [1], min: 1000.0, max: 1000.0, mean: 1000.0
         # tensor [cond] size: [1, 1374, 1024], min: -25.644331, max: 15.487422, mean: 0.0
@@ -185,11 +185,18 @@ class SparseStructureFlowModel(nn.Module):
         # tensor [h2] size: [1, 4096, 8], min: -4.184124, max: 3.802687, mean: 0.000481
 
         h2 = self.input_layer(h2.type(self.dtype))
+
+        # tensor [h2] size: [1, 4096, 1024], min: -3.353516, max: 3.339844, mean: -0.014493
+        # tensor [self.pos_emb[None]] size: [1, 4096, 1024], min: -1.0, max: 1.0, mean: 0.454115
         h2 = h2 + self.pos_emb[None] # cuda, half float ...
+        # tensor [h2] size: [1, 4096, 1024], min: -3.283203, max: 4.097656, mean: 0.439621
 
         t_emb = self.t_embedder.float()(t)
+
+        assert self.share_mod == False
         if self.share_mod: # False
             t_emb = self.adaLN_modulation(t_emb)
+
         t_emb = t_emb.type(self.dtype)
         h2 = h2.type(self.dtype)
         cond = cond.type(self.dtype)
@@ -197,10 +204,15 @@ class SparseStructureFlowModel(nn.Module):
             h2 = block.float()(h2.float(), t_emb.float(), cond.float()).type(self.dtype)
 
         h2 = h2.type(x.dtype)
-        h2 = F.layer_norm(h2, h2.shape[-1:])
+        # tensor [h2] size: [1, 4096, 1024], min: -4260.0, max: 6168.0, mean: 6.813056
+
+        h2 = F.layer_norm(h2, h2.shape[-1:]) # h2.shape[-1:] -- 1024
         h2 = self.out_layer(h2.type(self.dtype))
 
-        h2 = h2.permute(0, 2, 1).view(h2.shape[0], h2.shape[2], *[self.resolution // self.patch_size] * 3)
+        # tensor [h2] size: [1, 4096, 8], min: -4.324219, max: 3.894531, mean: -0.007873
+        h2 = h2.permute(0, 2, 1).view(h2.shape[0], h2.shape[2], *[self.resolution // self.patch_size] * 3) # self.resolution == 16
+        # tensor [h2] size: [1, 8, 16, 16, 16], min: -4.324219, max: 3.894531, mean: -0.007873
+
         h2 = unpatchify(h2, self.patch_size).contiguous()
         # tensor [h2] size: [1, 8, 16, 16, 16], min: -4.324219, max: 3.896484, mean: -0.007871
 

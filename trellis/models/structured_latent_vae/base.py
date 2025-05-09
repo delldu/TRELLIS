@@ -21,6 +21,7 @@ def block_attn_config(self):
         elif self.attn_mode == "full":
             yield "full", None, None, None, None
         elif self.attn_mode == "swin":
+            # attn_mode, window_size, shift_sequence, shift_window, serialize_mode
             yield "windowed", self.window_size, None, self.window_size // 2 * (i % 2), None
 
 
@@ -44,14 +45,17 @@ class SparseTransformerBase(nn.Module):
         qk_rms_norm: bool = False,
     ):
         super().__init__()
+        # print(f"== SparseTransformerBase: attn_mode={attn_mode}, window_size={window_size}")
+        # == SparseTransformerBase: attn_mode=swin, window_size=8
+
         # assert in_channels == 8
         # assert model_channels == 768
         # assert num_blocks == 12
         # assert num_heads == 12
         assert num_head_channels == 64
         assert mlp_ratio == 4
-        # assert attn_mode == 'swin'
-        # assert window_size == 8
+        assert attn_mode == 'swin'
+        assert window_size == 8
         assert pe_mode == 'ape'
         assert use_fp16 == True
         # assert qk_rms_norm == False

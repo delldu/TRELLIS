@@ -43,6 +43,10 @@ class SparseTransformerBlock(nn.Module):
         ln_affine: bool = False,
     ):
         super().__init__()
+        # xxxx_3333
+        assert shift_sequence == None
+        assert serialize_mode == None
+
         self.norm1 = LayerNorm32(channels, elementwise_affine=ln_affine, eps=1e-6)
         self.norm2 = LayerNorm32(channels, elementwise_affine=ln_affine, eps=1e-6)
         self.attn = SparseMultiHeadAttention(

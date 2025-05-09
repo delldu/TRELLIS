@@ -62,7 +62,7 @@ __attributes = {
     'SparseLinear': 'linear',
     'sparse_scaled_dot_product_attention': 'attention',
     'SerializeMode': 'attention',
-    'sparse_serialized_scaled_dot_product_self_attention': 'attention',
+    # 'sparse_serialized_scaled_dot_product_self_attention': 'attention',
     'sparse_windowed_scaled_dot_product_self_attention': 'attention',
     'SparseMultiHeadAttention': 'attention',
     'SparseConv3d': 'conv',

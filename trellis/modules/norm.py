@@ -14,7 +14,7 @@ class LayerNorm32(nn.LayerNorm):
 #     def forward(self, x: torch.Tensor) -> torch.Tensor:
 #         return super().forward(x.float()).type(x.dtype)
     
-    
+# xxxx_9999    
 class ChannelLayerNorm32(LayerNorm32):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         DIM = x.dim()

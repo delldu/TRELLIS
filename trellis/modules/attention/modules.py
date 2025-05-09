@@ -3,6 +3,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from .full_attn import scaled_dot_product_attention
+import todos
 import pdb
 
 class MultiHeadRMSNorm(nn.Module):
@@ -75,15 +76,19 @@ class MultiHeadAttention(nn.Module):
         qk_rms_norm: bool = False,
     ):
         super().__init__()
+        # print(f"== MultiHeadAttention: type={type}, use_rope={use_rope}, attn_mode={attn_mode}, qk_rms_norm={qk_rms_norm}")
+        # == MultiHeadAttention: type=self, use_rope=False, attn_mode=full, qk_rms_norm=True
+        # == MultiHeadAttention: type=cross, use_rope=False, attn_mode=full, qk_rms_norm=False
+
         assert channels == 1024
         assert num_heads == 16
         # assert ctx_channels == None or ...
-        # assert type = 'self'
+        # assert type = 'self' or 'cross''
         assert attn_mode == 'full'
         assert window_size == None
         assert shift_window == None
         # assert qkv_bias == True or ...
-        # assert use_rope == False or ...
+        assert use_rope == False
         # assert qk_rms_norm == True or ...
 
         assert channels % num_heads == 0
@@ -94,9 +99,13 @@ class MultiHeadAttention(nn.Module):
         if attn_mode == "windowed":
             raise NotImplementedError("Windowed attention is not yet implemented")
         
-        self.channels = channels
+        # self.channels = channels
         self.head_dim = channels // num_heads
+        assert self.head_dim == 64
+
         self.ctx_channels = ctx_channels if ctx_channels is not None else channels
+        assert self.ctx_channels == channels # xxxx_3333
+
         self.num_heads = num_heads
         self._type = type
         self.attn_mode = attn_mode
@@ -125,30 +134,42 @@ class MultiHeadAttention(nn.Module):
         B, L, C = x.shape
         # assert self.qk_rms_norm == True or ...
 
+        # tensor [x] size: [1, 4096, 1024], min: -24.621138, max: 10.970028, mean: 0.006027
+        # tensor [context] size: [1, 1374, 1024], min: -25.640625, max: 15.484375, mean: 0.0
+        # [context] type: <class 'NoneType'>
+        # [indices] type: <class 'NoneType'>
+        assert indices == None
+
         if self._type == "self":
+            # == MultiHeadAttention: type=self, use_rope=False, attn_mode=full, qk_rms_norm=True
             qkv = self.to_qkv(x)
             qkv = qkv.reshape(B, L, 3, self.num_heads, -1)
             if self.use_rope: # False
+                pdb.set_trace()
                 q, k, v = qkv.unbind(dim=2)
                 q, k = self.rope(q, k, indices)
                 qkv = torch.stack([q, k, v], dim=2)
             if self.attn_mode == "full":
-                if self.qk_rms_norm: # True or ...
+                if self.qk_rms_norm: # True
                     q, k, v = qkv.unbind(dim=2)
                     q = self.q_rms_norm(q)
                     k = self.k_rms_norm(k)
                     h = scaled_dot_product_attention(q, k, v)
                 else:
+                    pdb.set_trace()
                     h = scaled_dot_product_attention(qkv)
             elif self.attn_mode == "windowed":
                 raise NotImplementedError("Windowed attention is not yet implemented")
         else:
-            Lkv = context.shape[1]
+            # == MultiHeadAttention: type=cross, use_rope=False, attn_mode=full, qk_rms_norm=False
+            # tensor [context] size: [1, 1374, 1024], min: -25.640625, max: 15.484375, mean: 0.0
+            Lkv = context.shape[1] # 1374
             q = self.to_q(x)
             kv = self.to_kv(context)
             q = q.reshape(B, L, self.num_heads, -1)
             kv = kv.reshape(B, Lkv, 2, self.num_heads, -1)
-            if self.qk_rms_norm: # True or ...
+            if self.qk_rms_norm: # False
+                pdb.set_trace()
                 q = self.q_rms_norm(q)
                 k, v = kv.unbind(dim=2)
                 k = self.k_rms_norm(k)
@@ -157,4 +178,6 @@ class MultiHeadAttention(nn.Module):
                 h = scaled_dot_product_attention(q, kv)
         h = h.reshape(B, L, -1)
         h = self.to_out(h)
+
+        # tensor [h] size: [1, 4096, 1024], min: -6.635851, max: 4.444528, mean: 0.003872
         return h
