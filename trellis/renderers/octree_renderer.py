@@ -6,7 +6,7 @@ import cv2
 from scipy.stats import qmc
 from easydict import EasyDict as edict
 from ..representations.octree import DfsOctree
-
+import pdb
 
 def intrinsics_to_projection(
         intrinsics: torch.Tensor,
@@ -43,6 +43,8 @@ def render(viewpoint_camera, octree : DfsOctree, pipe, bg_color : torch.Tensor, 
     Background tensor (bg_color) must be on GPU!
     """
     # lazy import
+    pdb.set_trace()
+    
     if 'OctreeTrivecRasterizer' not in globals():
         from diffoctreerast import OctreeVoxelRasterizer, OctreeGaussianRasterizer, OctreeTrivecRasterizer, OctreeDecoupolyRasterizer
     
