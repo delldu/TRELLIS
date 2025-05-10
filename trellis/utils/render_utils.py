@@ -66,6 +66,7 @@ def get_renderer(sample, **kwargs):
     # ==== get_renderer sample: <class 'trellis.representations.gaussian.gaussian_model.Gaussian'>
 
     if isinstance(sample, Octree):
+        pdb.set_trace()
         renderer = OctreeRenderer()
         renderer.rendering_options.resolution = kwargs.get('resolution', 512)
         renderer.rendering_options.near = kwargs.get('near', 0.8)
@@ -83,6 +84,7 @@ def get_renderer(sample, **kwargs):
         renderer.pipe.kernel_size = kwargs.get('kernel_size', 0.1)
         renderer.pipe.use_mip_gaussian = True
     elif isinstance(sample, MeshExtractResult):
+        pdb.set_trace()
         renderer = MeshRenderer()
         renderer.rendering_options.resolution = kwargs.get('resolution', 512)
         renderer.rendering_options.near = kwargs.get('near', 1)
