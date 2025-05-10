@@ -20,56 +20,56 @@ __all__ = [
 ]
 
 
-def _naive_sdpa(q, k, v):
-    """
-    Naive implementation of scaled dot product attention.
-    """
-    q = q.permute(0, 2, 1, 3)   # [N, H, L, C]
-    k = k.permute(0, 2, 1, 3)   # [N, H, L, C]
-    v = v.permute(0, 2, 1, 3)   # [N, H, L, C]
-    scale_factor = 1 / math.sqrt(q.size(-1))
-    attn_weight = q @ k.transpose(-2, -1) * scale_factor
-    attn_weight = torch.softmax(attn_weight, dim=-1)
-    out = attn_weight @ v
-    out = out.permute(0, 2, 1, 3)   # [N, L, H, C]
-    return out
+# def _naive_sdpa(q, k, v):
+#     """
+#     Naive implementation of scaled dot product attention.
+#     """
+#     q = q.permute(0, 2, 1, 3)   # [N, H, L, C]
+#     k = k.permute(0, 2, 1, 3)   # [N, H, L, C]
+#     v = v.permute(0, 2, 1, 3)   # [N, H, L, C]
+#     scale_factor = 1 / math.sqrt(q.size(-1))
+#     attn_weight = q @ k.transpose(-2, -1) * scale_factor
+#     attn_weight = torch.softmax(attn_weight, dim=-1)
+#     out = attn_weight @ v
+#     out = out.permute(0, 2, 1, 3)   # [N, L, H, C]
+#     return out
 
 
-@overload
-def scaled_dot_product_attention(qkv: torch.Tensor) -> torch.Tensor:
-    """
-    Apply scaled dot product attention.
+# @overload
+# def scaled_dot_product_attention(qkv: torch.Tensor) -> torch.Tensor:
+#     """
+#     Apply scaled dot product attention.
 
-    Args:
-        qkv (torch.Tensor): A [N, L, 3, H, C] tensor containing Qs, Ks, and Vs.
-    """
-    ...
+#     Args:
+#         qkv (torch.Tensor): A [N, L, 3, H, C] tensor containing Qs, Ks, and Vs.
+#     """
+#     ...
 
-@overload
-def scaled_dot_product_attention(q: torch.Tensor, kv: torch.Tensor) -> torch.Tensor:
-    """
-    Apply scaled dot product attention.
+# @overload
+# def scaled_dot_product_attention(q: torch.Tensor, kv: torch.Tensor) -> torch.Tensor:
+#     """
+#     Apply scaled dot product attention.
 
-    Args:
-        q (torch.Tensor): A [N, L, H, C] tensor containing Qs.
-        kv (torch.Tensor): A [N, L, 2, H, C] tensor containing Ks and Vs.
-    """
-    ...
+#     Args:
+#         q (torch.Tensor): A [N, L, H, C] tensor containing Qs.
+#         kv (torch.Tensor): A [N, L, 2, H, C] tensor containing Ks and Vs.
+#     """
+#     ...
 
-@overload
-def scaled_dot_product_attention(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor) -> torch.Tensor:
-    """
-    Apply scaled dot product attention.
+# @overload
+# def scaled_dot_product_attention(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor) -> torch.Tensor:
+#     """
+#     Apply scaled dot product attention.
 
-    Args:
-        q (torch.Tensor): A [N, L, H, Ci] tensor containing Qs.
-        k (torch.Tensor): A [N, L, H, Ci] tensor containing Ks.
-        v (torch.Tensor): A [N, L, H, Co] tensor containing Vs.
+#     Args:
+#         q (torch.Tensor): A [N, L, H, Ci] tensor containing Qs.
+#         k (torch.Tensor): A [N, L, H, Ci] tensor containing Ks.
+#         v (torch.Tensor): A [N, L, H, Co] tensor containing Vs.
 
-    Note:
-        k and v are assumed to have the same coordinate map.
-    """
-    ...
+#     Note:
+#         k and v are assumed to have the same coordinate map.
+#     """
+#     ...
 
 def scaled_dot_product_attention(*args, **kwargs):
     arg_names_dict = {
@@ -105,36 +105,42 @@ def scaled_dot_product_attention(*args, **kwargs):
         assert len(v.shape) == 4, f"Invalid shape for v, got {v.shape}, expected [N, L, H, Co]"
         device = q.device    
 
-    if BACKEND == 'xformers':
-        if num_all_args == 1:
-            q, k, v = qkv.unbind(dim=2)
-        elif num_all_args == 2:
-            k, v = kv.unbind(dim=2)
-        out = xops.memory_efficient_attention(q, k, v)
-    elif BACKEND == 'flash_attn':
-        if num_all_args == 1:
-            out = flash_attn.flash_attn_qkvpacked_func(qkv)
-        elif num_all_args == 2:
-            out = flash_attn.flash_attn_kvpacked_func(q, kv)
-        elif num_all_args == 3:
-            out = flash_attn.flash_attn_func(q, k, v)
-    elif BACKEND == 'sdpa':
-        if num_all_args == 1:
-            q, k, v = qkv.unbind(dim=2)
-        elif num_all_args == 2:
-            k, v = kv.unbind(dim=2)
-        q = q.permute(0, 2, 1, 3)   # [N, H, L, C]
-        k = k.permute(0, 2, 1, 3)   # [N, H, L, C]
-        v = v.permute(0, 2, 1, 3)   # [N, H, L, C]
-        out = sdpa(q, k, v)         # [N, H, L, C]
-        out = out.permute(0, 2, 1, 3)   # [N, L, H, C]
-    elif BACKEND == 'naive':
-        if num_all_args == 1:
-            q, k, v = qkv.unbind(dim=2)
-        elif num_all_args == 2:
-            k, v = kv.unbind(dim=2)
-        out = _naive_sdpa(q, k, v)
-    else:
-        raise ValueError(f"Unknown attention module: {BACKEND}")
+    # if BACKEND == 'xformers':
+    #     if num_all_args == 1:
+    #         q, k, v = qkv.unbind(dim=2)
+    #     elif num_all_args == 2:
+    #         k, v = kv.unbind(dim=2)
+    #     out = xops.memory_efficient_attention(q, k, v)
+    # elif BACKEND == 'flash_attn':
+    #     if num_all_args == 1:
+    #         out = flash_attn.flash_attn_qkvpacked_func(qkv)
+    #     elif num_all_args == 2:
+    #         out = flash_attn.flash_attn_kvpacked_func(q, kv)
+    #     elif num_all_args == 3:
+    #         out = flash_attn.flash_attn_func(q, k, v)
+    # elif BACKEND == 'sdpa':
+    #     if num_all_args == 1:
+    #         q, k, v = qkv.unbind(dim=2)
+    #     elif num_all_args == 2:
+    #         k, v = kv.unbind(dim=2)
+    #     q = q.permute(0, 2, 1, 3)   # [N, H, L, C]
+    #     k = k.permute(0, 2, 1, 3)   # [N, H, L, C]
+    #     v = v.permute(0, 2, 1, 3)   # [N, H, L, C]
+    #     out = sdpa(q, k, v)         # [N, H, L, C]
+    #     out = out.permute(0, 2, 1, 3)   # [N, L, H, C]
+    # elif BACKEND == 'naive':
+    #     if num_all_args == 1:
+    #         q, k, v = qkv.unbind(dim=2)
+    #     elif num_all_args == 2:
+    #         k, v = kv.unbind(dim=2)
+    #     out = _naive_sdpa(q, k, v)
+    # else:
+    #     raise ValueError(f"Unknown attention module: {BACKEND}")
+
+    if num_all_args == 1:
+        q, k, v = qkv.unbind(dim=2)
+    elif num_all_args == 2:
+        k, v = kv.unbind(dim=2)
+    out = xops.memory_efficient_attention(q, k, v)        
     
     return out
