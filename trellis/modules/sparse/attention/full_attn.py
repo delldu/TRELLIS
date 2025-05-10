@@ -16,76 +16,76 @@ __all__ = [
 ]
 
 
-@overload
-def sparse_scaled_dot_product_attention(qkv: SparseTensor) -> SparseTensor:
-    """
-    Apply scaled dot product attention to a sparse tensor.
+# @overload
+# def sparse_scaled_dot_product_attention(qkv: SparseTensor) -> SparseTensor:
+#     """
+#     Apply scaled dot product attention to a sparse tensor.
 
-    Args:
-        qkv (SparseTensor): A [N, *, 3, H, C] sparse tensor containing Qs, Ks, and Vs.
-    """
-    ...
+#     Args:
+#         qkv (SparseTensor): A [N, *, 3, H, C] sparse tensor containing Qs, Ks, and Vs.
+#     """
+#     ...
 
-@overload
-def sparse_scaled_dot_product_attention(q: SparseTensor, kv: Union[SparseTensor, torch.Tensor]) -> SparseTensor:
-    """
-    Apply scaled dot product attention to a sparse tensor.
+# @overload
+# def sparse_scaled_dot_product_attention(q: SparseTensor, kv: Union[SparseTensor, torch.Tensor]) -> SparseTensor:
+#     """
+#     Apply scaled dot product attention to a sparse tensor.
 
-    Args:
-        q (SparseTensor): A [N, *, H, C] sparse tensor containing Qs.
-        kv (SparseTensor or torch.Tensor): A [N, *, 2, H, C] sparse tensor or a [N, L, 2, H, C] dense tensor containing Ks and Vs.
-    """
-    ...
+#     Args:
+#         q (SparseTensor): A [N, *, H, C] sparse tensor containing Qs.
+#         kv (SparseTensor or torch.Tensor): A [N, *, 2, H, C] sparse tensor or a [N, L, 2, H, C] dense tensor containing Ks and Vs.
+#     """
+#     ...
 
-@overload
-def sparse_scaled_dot_product_attention(q: torch.Tensor, kv: SparseTensor) -> torch.Tensor:
-    """
-    Apply scaled dot product attention to a sparse tensor.
+# @overload
+# def sparse_scaled_dot_product_attention(q: torch.Tensor, kv: SparseTensor) -> torch.Tensor:
+#     """
+#     Apply scaled dot product attention to a sparse tensor.
 
-    Args:
-        q (SparseTensor): A [N, L, H, C] dense tensor containing Qs.
-        kv (SparseTensor or torch.Tensor): A [N, *, 2, H, C] sparse tensor containing Ks and Vs.
-    """
-    ...
+#     Args:
+#         q (SparseTensor): A [N, L, H, C] dense tensor containing Qs.
+#         kv (SparseTensor or torch.Tensor): A [N, *, 2, H, C] sparse tensor containing Ks and Vs.
+#     """
+#     ...
 
-@overload
-def sparse_scaled_dot_product_attention(q: SparseTensor, k: SparseTensor, v: SparseTensor) -> SparseTensor:
-    """
-    Apply scaled dot product attention to a sparse tensor.
+# @overload
+# def sparse_scaled_dot_product_attention(q: SparseTensor, k: SparseTensor, v: SparseTensor) -> SparseTensor:
+#     """
+#     Apply scaled dot product attention to a sparse tensor.
 
-    Args:
-        q (SparseTensor): A [N, *, H, Ci] sparse tensor containing Qs.
-        k (SparseTensor): A [N, *, H, Ci] sparse tensor containing Ks.
-        v (SparseTensor): A [N, *, H, Co] sparse tensor containing Vs.
+#     Args:
+#         q (SparseTensor): A [N, *, H, Ci] sparse tensor containing Qs.
+#         k (SparseTensor): A [N, *, H, Ci] sparse tensor containing Ks.
+#         v (SparseTensor): A [N, *, H, Co] sparse tensor containing Vs.
 
-    Note:
-        k and v are assumed to have the same coordinate map.
-    """
-    ...
+#     Note:
+#         k and v are assumed to have the same coordinate map.
+#     """
+#     ...
 
-@overload
-def sparse_scaled_dot_product_attention(q: SparseTensor, k: torch.Tensor, v: torch.Tensor) -> SparseTensor:
-    """
-    Apply scaled dot product attention to a sparse tensor.
+# @overload
+# def sparse_scaled_dot_product_attention(q: SparseTensor, k: torch.Tensor, v: torch.Tensor) -> SparseTensor:
+#     """
+#     Apply scaled dot product attention to a sparse tensor.
 
-    Args:
-        q (SparseTensor): A [N, *, H, Ci] sparse tensor containing Qs.
-        k (torch.Tensor): A [N, L, H, Ci] dense tensor containing Ks.
-        v (torch.Tensor): A [N, L, H, Co] dense tensor containing Vs.
-    """
-    ...
+#     Args:
+#         q (SparseTensor): A [N, *, H, Ci] sparse tensor containing Qs.
+#         k (torch.Tensor): A [N, L, H, Ci] dense tensor containing Ks.
+#         v (torch.Tensor): A [N, L, H, Co] dense tensor containing Vs.
+#     """
+#     ...
 
-@overload
-def sparse_scaled_dot_product_attention(q: torch.Tensor, k: SparseTensor, v: SparseTensor) -> torch.Tensor:
-    """
-    Apply scaled dot product attention to a sparse tensor.
+# @overload
+# def sparse_scaled_dot_product_attention(q: torch.Tensor, k: SparseTensor, v: SparseTensor) -> torch.Tensor:
+#     """
+#     Apply scaled dot product attention to a sparse tensor.
 
-    Args:
-        q (torch.Tensor): A [N, L, H, Ci] dense tensor containing Qs.
-        k (SparseTensor): A [N, *, H, Ci] sparse tensor containing Ks.
-        v (SparseTensor): A [N, *, H, Co] sparse tensor containing Vs.
-    """
-    ...
+#     Args:
+#         q (torch.Tensor): A [N, L, H, Ci] dense tensor containing Qs.
+#         k (SparseTensor): A [N, *, H, Ci] sparse tensor containing Ks.
+#         v (SparseTensor): A [N, *, H, Co] sparse tensor containing Vs.
+#     """
+#     ...
 
 def sparse_scaled_dot_product_attention(*args, **kwargs):
     arg_names_dict = {

@@ -3,8 +3,9 @@ from ...modules.sparse import SparseTensor
 from easydict import EasyDict as edict
 from .utils_cube import *
 from .flexicubes.flexicubes import FlexiCubes
+import pdb
 
-
+# xxxx_3333
 class MeshExtractResult:
     def __init__(self,
         vertices,
@@ -34,26 +35,24 @@ class MeshExtractResult:
         v2 = verts[i2, :]
         face_normals = torch.cross(v1 - v0, v2 - v0, dim=-1)
         face_normals = torch.nn.functional.normalize(face_normals, dim=1)
-        # print(face_normals.min(), face_normals.max(), face_normals.shape)
         return face_normals[:, None, :].repeat(1, 3, 1)
                 
-    def comput_v_normals(self, verts, faces):
-        i0 = faces[..., 0].long()
-        i1 = faces[..., 1].long()
-        i2 = faces[..., 2].long()
+    # def comput_v_normals(self, verts, faces):
+    #     i0 = faces[..., 0].long()
+    #     i1 = faces[..., 1].long()
+    #     i2 = faces[..., 2].long()
 
-        v0 = verts[i0, :]
-        v1 = verts[i1, :]
-        v2 = verts[i2, :]
-        face_normals = torch.cross(v1 - v0, v2 - v0, dim=-1)
-        v_normals = torch.zeros_like(verts)
-        v_normals.scatter_add_(0, i0[..., None].repeat(1, 3), face_normals)
-        v_normals.scatter_add_(0, i1[..., None].repeat(1, 3), face_normals)
-        v_normals.scatter_add_(0, i2[..., None].repeat(1, 3), face_normals)
+    #     v0 = verts[i0, :]
+    #     v1 = verts[i1, :]
+    #     v2 = verts[i2, :]
+    #     face_normals = torch.cross(v1 - v0, v2 - v0, dim=-1)
+    #     v_normals = torch.zeros_like(verts)
+    #     v_normals.scatter_add_(0, i0[..., None].repeat(1, 3), face_normals)
+    #     v_normals.scatter_add_(0, i1[..., None].repeat(1, 3), face_normals)
+    #     v_normals.scatter_add_(0, i2[..., None].repeat(1, 3), face_normals)
 
-        v_normals = torch.nn.functional.normalize(v_normals, dim=1)
-        return v_normals   
-
+    #     v_normals = torch.nn.functional.normalize(v_normals, dim=1)
+    #     return v_normals   
 
 class SparseFeatures2Mesh:
     def __init__(self, device="cuda", res=64, use_color=True):
@@ -70,6 +69,7 @@ class SparseFeatures2Mesh:
         self.reg_v = verts.to(self.device)
         self.use_color = use_color
         self._calc_layout()
+        # ==> pdb.set_trace()
     
     def _calc_layout(self):
         LAYOUTS = {
@@ -88,7 +88,8 @@ class SparseFeatures2Mesh:
             v['range'] = (start, start + v['size'])
             start += v['size']
         self.feats_channels = start
-        
+
+    # --------------------------------------------------------------        
     def get_layout(self, feats : torch.Tensor, name : str):
         if name not in self.layouts:
             return None
@@ -103,6 +104,11 @@ class SparseFeatures2Mesh:
         Returns:
             return the success tag and ni you loss, 
         """
+        # ---------------------------------------------------------------------------------------
+        # cubefeats = <trellis.modules.sparse.basic.SparseTensor object at 0x7fcf9cd0b490>
+        # training = False
+        # ---------------------------------------------------------------------------------------
+
         # add sdf bias to verts_attrs
         coords = cubefeats.coords[:, 1:]
         feats = cubefeats.feats
@@ -132,8 +138,9 @@ class SparseFeatures2Mesh:
             voxelgrid_colors=colors_d,
             training=training)
         
+        # ===> pdb.set_trace()
         mesh = MeshExtractResult(vertices=vertices, faces=faces, vertex_attrs=colors, res=self.res)
-        if training:
+        if training: # False
             if mesh.success:
                 reg_loss += L_dev.mean() * 0.5
             reg_loss += (weights[:,:20]).abs().mean() * 0.2

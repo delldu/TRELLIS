@@ -63,32 +63,32 @@ class SparseConv3d(nn.Module):
         return out
 
 
-class SparseInverseConv3d(nn.Module):
-    def __init__(self, in_channels, out_channels, kernel_size, stride=1, dilation=1, bias=True, indice_key=None):
-        super(SparseInverseConv3d, self).__init__()
-        if 'spconv' not in globals():
-            import spconv.pytorch as spconv
-        self.conv = spconv.SparseInverseConv3d(in_channels, out_channels, kernel_size, bias=bias, indice_key=indice_key)
-        self.stride = tuple(stride) if isinstance(stride, (list, tuple)) else (stride, stride, stride)
+# class SparseInverseConv3d(nn.Module):
+#     def __init__(self, in_channels, out_channels, kernel_size, stride=1, dilation=1, bias=True, indice_key=None):
+#         super(SparseInverseConv3d, self).__init__()
+#         if 'spconv' not in globals():
+#             import spconv.pytorch as spconv
+#         self.conv = spconv.SparseInverseConv3d(in_channels, out_channels, kernel_size, bias=bias, indice_key=indice_key)
+#         self.stride = tuple(stride) if isinstance(stride, (list, tuple)) else (stride, stride, stride)
         
-    def forward(self, x: SparseTensor) -> SparseTensor:
-        spatial_changed = any(s != 1 for s in self.stride)
-        if spatial_changed:
-            # recover the original spconv order
-            data = x.get_spatial_cache(f'conv_{self.stride}_unsorted_data')
-            bwd = x.get_spatial_cache(f'conv_{self.stride}_sort_bwd')
-            data = data.replace_feature(x.feats[bwd])
-            if DEBUG:
-                assert torch.equal(data.indices, x.coords[bwd]), 'Recover the original order failed'
-        else:
-            data = x.data
+#     def forward(self, x: SparseTensor) -> SparseTensor:
+#         spatial_changed = any(s != 1 for s in self.stride)
+#         if spatial_changed:
+#             # recover the original spconv order
+#             data = x.get_spatial_cache(f'conv_{self.stride}_unsorted_data')
+#             bwd = x.get_spatial_cache(f'conv_{self.stride}_sort_bwd')
+#             data = data.replace_feature(x.feats[bwd])
+#             if DEBUG:
+#                 assert torch.equal(data.indices, x.coords[bwd]), 'Recover the original order failed'
+#         else:
+#             data = x.data
 
-        new_data = self.conv(data)
-        new_shape = [x.shape[0], self.conv.out_channels]
-        new_layout = None if spatial_changed else x.layout
-        out = SparseTensor(
-            new_data, shape=torch.Size(new_shape), layout=new_layout,
-            scale=tuple([s // stride for s, stride in zip(x._scale, self.stride)]),
-            spatial_cache=x._spatial_cache,
-        )
-        return out
+#         new_data = self.conv(data)
+#         new_shape = [x.shape[0], self.conv.out_channels]
+#         new_layout = None if spatial_changed else x.layout
+#         out = SparseTensor(
+#             new_data, shape=torch.Size(new_shape), layout=new_layout,
+#             scale=tuple([s // stride for s, stride in zip(x._scale, self.stride)]),
+#             spatial_cache=x._spatial_cache,
+#         )
+#         return out

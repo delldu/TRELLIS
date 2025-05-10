@@ -42,7 +42,6 @@ class SparseMultiHeadAttention(nn.Module):
         qk_rms_norm: bool = False,
     ):
         super().__init__()
-        # xxxx_3333
         # print(f"== SparseMultiHeadAttention: type={type}, attn_mode={attn_mode}, use_rope={use_rope}, qk_rms_norm={qk_rms_norm}, qkv_bias={qkv_bias}")
         # == SparseMultiHeadAttention: type=self, attn_mode=windowed, use_rope=False, qk_rms_norm=False, qkv_bias=True
         # == SparseMultiHeadAttention: type=self, attn_mode=full, use_rope=False, qk_rms_norm=True, qkv_bias=True
@@ -129,7 +128,7 @@ class SparseMultiHeadAttention(nn.Module):
             qkv = self._fused_pre(qkv, num_fused=3)
             if self.use_rope: # False
                 pdb.set_trace()
-                qkv = self._rope(qkv)
+                # qkv = self._rope(qkv)
             if self.qk_rms_norm: # False | True
                 q, k, v = qkv.unbind(dim=1)
                 q = self.q_rms_norm(q)
@@ -139,9 +138,9 @@ class SparseMultiHeadAttention(nn.Module):
                 h = sparse_scaled_dot_product_attention(qkv)
             elif self.attn_mode == "serialized":
                 pdb.set_trace()
-                h = sparse_serialized_scaled_dot_product_self_attention(
-                    qkv, self.window_size, serialize_mode=self.serialize_mode, shift_sequence=self.shift_sequence, shift_window=self.shift_window
-                )
+                # h = sparse_serialized_scaled_dot_product_self_attention(
+                #     qkv, self.window_size, serialize_mode=self.serialize_mode, shift_sequence=self.shift_sequence, shift_window=self.shift_window
+                # )
             elif self.attn_mode == "windowed":
                 h = sparse_windowed_scaled_dot_product_self_attention(
                     qkv, self.window_size, shift_window=self.shift_window

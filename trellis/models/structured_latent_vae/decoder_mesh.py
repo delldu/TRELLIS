@@ -39,7 +39,6 @@ class SparseSubdivideBlock3d(nn.Module):
         self.out_resolution = resolution * 2
         self.out_channels = out_channels or channels
 
-        # sp.norm.SparseGroupNorm32(num_groups, channels)
         self.act_layers = nn.Sequential(
             sp.SparseGroupNorm32(num_groups, channels), # (32, 768)
             sp.SparseSiLU()
@@ -51,7 +50,6 @@ class SparseSubdivideBlock3d(nn.Module):
             sp.SparseConv3d(channels, self.out_channels, 3, indice_key=f"res_{self.out_resolution}"),
             sp.SparseGroupNorm32(num_groups, self.out_channels),
             sp.SparseSiLU(),
-            # zero_module(sp.SparseConv3d(self.out_channels, self.out_channels, 3, indice_key=f"res_{self.out_resolution}")),
             sp.SparseConv3d(self.out_channels, self.out_channels, 3, indice_key=f"res_{self.out_resolution}"),
         )
         
@@ -129,6 +127,7 @@ class SLatMeshDecoder(SparseTransformerBase):
         
         self.rep_config = representation_config
 
+        # xxxx_3333
         self.mesh_extractor = SparseFeatures2Mesh(res=resolution*4, use_color=self.rep_config.get('use_color', False))
         self.out_channels = self.mesh_extractor.feats_channels
 

@@ -62,7 +62,8 @@ def yaw_pitch_r_fov_to_extrinsics_intrinsics(yaws, pitchs, rs, fovs):
 
 
 def get_renderer(sample, **kwargs):
-    print("== get_renderer sample: type(sample)")
+    # print(f"==== get_renderer sample: {type(sample)}")
+    # ==== get_renderer sample: <class 'trellis.representations.gaussian.gaussian_model.Gaussian'>
 
     if isinstance(sample, Octree):
         renderer = OctreeRenderer()
@@ -72,7 +73,7 @@ def get_renderer(sample, **kwargs):
         renderer.rendering_options.bg_color = kwargs.get('bg_color', (0, 0, 0))
         renderer.rendering_options.ssaa = kwargs.get('ssaa', 4)
         renderer.pipe.primitive = sample.primitive
-    elif isinstance(sample, Gaussian):
+    elif isinstance(sample, Gaussian): # True
         renderer = GaussianRenderer()
         renderer.rendering_options.resolution = kwargs.get('resolution', 512)
         renderer.rendering_options.near = kwargs.get('near', 0.8)
@@ -96,7 +97,9 @@ def render_frames(sample, extrinsics, intrinsics, options={}, colors_overwrite=N
     renderer = get_renderer(sample, **options)
     rets = {}
     for j, (extr, intr) in tqdm(enumerate(zip(extrinsics, intrinsics)), desc='Rendering', disable=not verbose):
-        if isinstance(sample, MeshExtractResult):
+        # sample -- <trellis.representations.gaussian.gaussian_model.Gaussian object at 0x7f8bfad42820>
+
+        if isinstance(sample, MeshExtractResult): # False
             res = renderer.render(sample, extr, intr)
             if 'normal' not in rets: rets['normal'] = []
             rets['normal'].append(np.clip(res['normal'].detach().cpu().numpy().transpose(1, 2, 0) * 255, 0, 255).astype(np.uint8))

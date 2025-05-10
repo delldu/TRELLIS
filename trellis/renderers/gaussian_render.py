@@ -17,7 +17,7 @@ from ..representations.gaussian import Gaussian
 from .sh_utils import eval_sh
 import torch.nn.functional as F
 from easydict import EasyDict as edict
-
+import pdb
 
 def intrinsics_to_projection(
         intrinsics: torch.Tensor,
@@ -54,6 +54,10 @@ def render(viewpoint_camera, pc : Gaussian, pipe, bg_color : torch.Tensor, scali
     Background tensor (bg_color) must be on GPU!
     """
     # lazy import
+    # ------------------------------------------------------------------------------------------------------------
+    # viewpoint_camera.keys() -- ['image_height', 'image_width', 'FoVx', 'FoVy', 'znear', 'zfar', 
+    #     'world_view_transform', 'projection_matrix', 'full_proj_transform', 'camera_center']
+    # ------------------------------------------------------------------------------------------------------------
     if 'GaussianRasterizer' not in globals():
         from diff_gaussian_rasterization import GaussianRasterizer, GaussianRasterizationSettings
     
@@ -67,7 +71,7 @@ def render(viewpoint_camera, pc : Gaussian, pipe, bg_color : torch.Tensor, scali
     tanfovx = math.tan(viewpoint_camera.FoVx * 0.5)
     tanfovy = math.tan(viewpoint_camera.FoVy * 0.5)
     
-    kernel_size = pipe.kernel_size
+    kernel_size = pipe.kernel_size # 0.1
     subpixel_offset = torch.zeros((int(viewpoint_camera.image_height), int(viewpoint_camera.image_width), 2), dtype=torch.float32, device="cuda")
 
     # image_height: int
@@ -83,8 +87,8 @@ def render(viewpoint_camera, pc : Gaussian, pipe, bg_color : torch.Tensor, scali
     # prefiltered : bool
     # debug : bool
     raster_settings = GaussianRasterizationSettings(
-        image_height=int(viewpoint_camera.image_height),
-        image_width=int(viewpoint_camera.image_width),
+        image_height=int(viewpoint_camera.image_height), # 1024
+        image_width=int(viewpoint_camera.image_width), # 1024
         tanfovx=tanfovx,
         tanfovy=tanfovy,
         # kernel_size=kernel_size,
@@ -110,18 +114,23 @@ def render(viewpoint_camera, pc : Gaussian, pipe, bg_color : torch.Tensor, scali
     scales = None
     rotations = None
     cov3D_precomp = None
-    if pipe.compute_cov3D_python:
+
+    if pipe.compute_cov3D_python: # False
         cov3D_precomp = pc.get_covariance(scaling_modifier)
     else:
         scales = pc.get_scaling
         rotations = pc.get_rotation
+        # tensor [pc.get_scaling] size: [478560, 3], min: 0.0009, max: 0.020283, mean: 0.001552
+        # tensor [pc.get_rotation] size: [478560, 4], min: -0.999981, max: 0.999999, mean: 0.206155
+
 
     # If precomputed colors are provided, use them. Otherwise, if it is desired to precompute colors
     # from SHs in Python, do it. If not, then SH -> RGB conversion will be done by rasterizer.
     shs = None
     colors_precomp = None
-    if override_color is None:
-        if pipe.convert_SHs_python:
+    if override_color is None: # True
+        if pipe.convert_SHs_python: # False
+            pdb.set_trace()
             shs_view = pc.get_features.transpose(1, 2).view(-1, 3, (pc.max_sh_degree+1)**2)
             dir_pp = (pc.get_xyz - viewpoint_camera.camera_center.repeat(pc.get_features.shape[0], 1))
             dir_pp_normalized = dir_pp/dir_pp.norm(dim=1, keepdim=True)
@@ -134,14 +143,14 @@ def render(viewpoint_camera, pc : Gaussian, pipe, bg_color : torch.Tensor, scali
 
     # Rasterize visible Gaussians to image, obtain their radii (on screen). 
     rendered_image, radii = rasterizer(
-        means3D = means3D,
-        means2D = means2D,
+        means3D = means3D, # size() -- [478560, 3]
+        means2D = means2D, # size() -- [478560, 3]
         shs = shs,
         colors_precomp = colors_precomp,
         opacities = opacity,
         scales = scales,
         rotations = rotations,
-        cov3D_precomp = cov3D_precomp
+        cov3D_precomp = cov3D_precomp # None ???
     )
 
     # Those Gaussians that were frustum culled or had a radius of 0 were not visible.

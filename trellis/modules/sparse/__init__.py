@@ -66,7 +66,7 @@ __attributes = {
     'sparse_windowed_scaled_dot_product_self_attention': 'attention',
     'SparseMultiHeadAttention': 'attention',
     'SparseConv3d': 'conv',
-    'SparseInverseConv3d': 'conv',
+    # 'SparseInverseConv3d': 'conv',
     'SparseDownsample': 'spatial',
     'SparseUpsample': 'spatial',
     'SparseSubdivide' : 'spatial'

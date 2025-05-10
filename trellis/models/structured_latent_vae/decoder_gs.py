@@ -6,6 +6,7 @@ from ...modules import sparse as sp
 from ...utils.random_utils import hammersley_sequence
 from .base import SparseTransformerBase
 from ...representations import Gaussian
+import todos
 import pdb
 
 class SLatGaussianDecoder(SparseTransformerBase):
@@ -89,7 +90,7 @@ class SLatGaussianDecoder(SparseTransformerBase):
             v['range'] = (start, start + v['size'])
             start += v['size']
         self.out_channels = start
-    
+
     def to_representation(self, x: sp.SparseTensor) -> List[Gaussian]:
         """
         Convert a batch of network outputs to 3D representations.
@@ -101,7 +102,8 @@ class SLatGaussianDecoder(SparseTransformerBase):
             list of representations
         """
         ret = []
-        for i in range(x.shape[0]):
+        for i in range(x.shape[0]): # 1
+            # xxxx_3333
             representation = Gaussian(
                 sh_degree=0,
                 aabb=[-0.5, -0.5, -0.5, 1.0, 1.0, 1.0],
@@ -110,21 +112,30 @@ class SLatGaussianDecoder(SparseTransformerBase):
                 opacity_bias = self.rep_config['opacity_bias'],
                 scaling_activation = self.rep_config['scaling_activation']
             )
+            # self.resolution === 64
+            # x.layout[i] -- slice(0, 14955, None)
+
+            # tensor [x.coords] size: [14955, 4], min: 0.0, max: 63.0, mean: 23.262018
             xyz = (x.coords[x.layout[i]][:, 1:].float() + 0.5) / self.resolution
+            # tensor [xyz] size: [14955, 3], min: 0.007812, max: 0.992188, mean: 0.492438
+
+            # (Pdb) self.layout.keys() -- ['_xyz', '_features_dc', '_scaling', '_rotation', '_opacity']
             for k, v in self.layout.items():
                 if k == '_xyz':
                     offset = x.feats[x.layout[i]][:, v['range'][0]:v['range'][1]].reshape(-1, *v['shape'])
                     offset = offset * self.rep_config['lr'][k]
-                    if self.rep_config['perturb_offset']:
+                    if self.rep_config['perturb_offset']: # True
                         offset = offset + self.offset_perturbation
                     offset = torch.tanh(offset) / self.resolution * 0.5 * self.rep_config['voxel_size']
                     _xyz = xyz.unsqueeze(1) + offset
                     setattr(representation, k, _xyz.flatten(0, 1))
                 else:
                     feats = x.feats[x.layout[i]][:, v['range'][0]:v['range'][1]].reshape(-1, *v['shape']).flatten(0, 1)
+                    # (Pdb) self.rep_config['lr'] -- {'_xyz': 1.0, '_features_dc': 1.0, '_opacity': 1.0, '_scaling': 1.0, '_rotation': 0.1}
                     feats = feats * self.rep_config['lr'][k]
                     setattr(representation, k, feats)
             ret.append(representation)
+            
         return ret
 
     def forward(self, x: sp.SparseTensor) -> List[Gaussian]:
