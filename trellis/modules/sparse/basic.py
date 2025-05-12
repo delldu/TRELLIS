@@ -45,6 +45,8 @@ class SparseTensor:
         # args = ()
         # kwargs = {}
         # Lazy import of sparse tensor backend
+        # print(f"SparseTensor: args={args}, kwargs={kwargs.keys()} ...")
+
         global SparseTensorData
         # SparseTensorData -- <class 'spconv.pytorch.core.SparseConvTensor'>
         if SparseTensorData is None: # False
@@ -55,7 +57,9 @@ class SparseTensor:
                 SparseTensorData = importlib.import_module('torchsparse').SparseTensor
             elif BACKEND == 'spconv': # True
                 SparseTensorData = importlib.import_module('spconv.pytorch').SparseConvTensor
-                
+                # import spconv.pytorch as spconv
+                # from spconv.pytorch import SparseConvTensor
+
         method_id = 0
         if len(args) != 0:
             method_id = 0 if isinstance(args[0], torch.Tensor) else 1
@@ -65,28 +69,23 @@ class SparseTensor:
         # assert method_id == 0 or 1
         if method_id == 0:
             feats, coords, shape, layout = args + (None,) * (4 - len(args)) # (None, None, None, None)
-
             # print(f"SparseTensor: method_id==0: kwargs={kwargs.keys()}, shape={shape}, layout={layout} ...")
             # SparseTensor: method_id==0: kwargs=dict_keys(['feats', 'coords']), shape=None, layout=None ...
             # SparseTensor: method_id==0: kwargs=dict_keys([]), shape=torch.Size([1, 192]), layout=None ...
-
             if 'feats' in kwargs: # True | False
                 feats = kwargs['feats']
                 del kwargs['feats']
             if 'coords' in kwargs: # True | False
                 coords = kwargs['coords']
                 del kwargs['coords']
-
-            if 'shape' in kwargs: # False
-                pdb.set_trace()
-                shape = kwargs['shape']
-                del kwargs['shape']
-            if 'layout' in kwargs: # False
-                pdb.set_trace()
-                layout = kwargs['layout']
-                del kwargs['layout']
-
-
+            # if 'shape' in kwargs: # False
+            #     pdb.set_trace()
+            #     shape = kwargs['shape']
+            #     del kwargs['shape']
+            # if 'layout' in kwargs: # False
+            #     pdb.set_trace()
+            #     layout = kwargs['layout']
+            #     del kwargs['layout']
             if shape is None: # False | True
                 shape = self.__cal_shape(feats, coords)
             if layout is None: # True
@@ -105,11 +104,10 @@ class SparseTensor:
             data, shape, layout = args + (None,) * (3 - len(args))
             # print(f"SparseTensor: method_id == 1: kwargs={kwargs.keys()}, shape={shape}, layout={layout} ...")
             # SparseTensor: method_id == 1: kwargs=dict_keys(['shape', 'layout', 'scale', 'spatial_cache']), shape=None, layout=None ...
-
-            if 'data' in kwargs: # False
-                pdb.set_trace()
-                data = kwargs['data']
-                del kwargs['data']
+            # if 'data' in kwargs: # False
+            #     pdb.set_trace()
+            #     data = kwargs['data']
+            #     del kwargs['data']
             if 'shape' in kwargs: # True
                 shape = kwargs['shape']
                 del kwargs['shape']
@@ -121,7 +119,6 @@ class SparseTensor:
             if shape is None: # True
                 shape = self.__cal_shape(self.feats, self.coords)
             if layout is None: # False
-                pdb.set_trace()
                 layout = self.__cal_layout(self.coords, shape[0])
 
         self._shape = shape
@@ -146,15 +143,19 @@ class SparseTensor:
         #pdb.set_trace()
 
     def __cal_shape(self, feats, coords):
+        # (Pdb) coords.size() -- [14955, 4], feats.size() -- [14955, 8]
         shape = []
         shape.append(coords[:, 0].max().item() + 1)
         shape.extend([*feats.shape[1:]])
-        return torch.Size(shape)
+        return torch.Size(shape) # [1, 8]
     
     def __cal_layout(self, coords, batch_size):
+        # coords.size() -- [14955, 4]
+        # batch_size = 1
         seq_len = torch.bincount(coords[:, 0], minlength=batch_size)
-        offset = torch.cumsum(seq_len, dim=0) 
+        offset = torch.cumsum(seq_len, dim=0) # [14955]
         layout = [slice((offset[i] - seq_len[i]).item(), offset[i].item()) for i in range(batch_size)]
+        # layout -- [slice(0, 14955, None)]
         return layout
     
     @property
@@ -212,11 +213,6 @@ class SparseTensor:
         todos.debug.output_var(f"{s} data.coords", self.data.indices)
         todos.debug.output_var(f"{s} data.features", self.data.features)
 
-    # @overload
-    # def to(self, dtype: torch.dtype) -> 'SparseTensor': ...
-
-    # @overload
-    # def to(self, device: Optional[Union[str, torch.device]] = None, dtype: Optional[torch.dtype] = None) -> 'SparseTensor': ...
 
     def to(self, *args, **kwargs) -> 'SparseTensor':
         # ==> pdb.set_trace()
@@ -262,18 +258,8 @@ class SparseTensor:
         new_feats = self.feats.float()
         return self.replace(new_feats)
     
-    # def detach(self) -> 'SparseTensor':
-    #     new_coords = self.coords.detach()
-    #     new_feats = self.feats.detach()
-    #     return self.replace(new_feats, new_coords)
-
-    # def dense(self) -> torch.Tensor:
-    #     if BACKEND == 'torchsparse':
-    #         return self.data.dense()
-    #     elif BACKEND == 'spconv':
-    #         return self.data.dense()
-
     def reshape(self, *shape) -> 'SparseTensor':
+        # ==> pdb.set_trace()
         new_feats = self.feats.reshape(self.feats.shape[0], *shape)
         return self.replace(new_feats)
     
@@ -293,61 +279,39 @@ class SparseTensor:
             )
             new_data._caches = self.data._caches
         elif BACKEND == 'spconv': # True
+            # -------------------------------------------------------------------------
+            # features: torch.Tensor,
+            # indices: torch.Tensor,
+            # spatial_shape: Union[List[int], np.ndarray],
+            # batch_size: int,
+            # grid: Optional[torch.Tensor] = None,
+            # voxel_num: Optional[torch.Tensor] = None,
+            # indice_dict: Optional[dict] = None,
+            # benchmark: bool = False,
+            # permanent_thrust_allocator: bool = False,
+            # enable_timer: bool = False,
+            # force_algo: Optional[ConvAlgo] = None
+            # -------------------------------------------------------------------------
             new_data = SparseTensorData(
                 self.data.features.reshape(self.data.features.shape[0], -1),
                 self.data.indices,
                 self.data.spatial_shape,
                 self.data.batch_size,
-                self.data.grid,
-                self.data.voxel_num,
-                self.data.indice_dict
             )
             new_data._features = feats
-            new_data.benchmark = self.data.benchmark
-            new_data.benchmark_record = self.data.benchmark_record
-            new_data.thrust_allocator = self.data.thrust_allocator
-            new_data._timer = self.data._timer
-            new_data.force_algo = self.data.force_algo
-            new_data.int8_scale = self.data.int8_scale
+            # new_data.benchmark = self.data.benchmark
+            # new_data.benchmark_record = self.data.benchmark_record
+            # new_data.thrust_allocator = self.data.thrust_allocator
+            # new_data._timer = self.data._timer
+            # new_data.force_algo = self.data.force_algo
+            # new_data.int8_scale = self.data.int8_scale
             if coords is not None:
                 new_data.indices = coords
         new_tensor = SparseTensor(new_data, shape=torch.Size(new_shape), layout=self.layout, scale=self._scale, \
                 spatial_cache=self._spatial_cache)
         return new_tensor
 
-    # @staticmethod
-    # def full(aabb, dim, value, dtype=torch.float32, device=None) -> 'SparseTensor':
-    #     pdb.set_trace()
-    #     N, C = dim
-    #     x = torch.arange(aabb[0], aabb[3] + 1)
-    #     y = torch.arange(aabb[1], aabb[4] + 1)
-    #     z = torch.arange(aabb[2], aabb[5] + 1)
-    #     coords = torch.stack(torch.meshgrid(x, y, z, indexing='ij'), dim=-1).reshape(-1, 3)
-    #     coords = torch.cat([
-    #         torch.arange(N).view(-1, 1).repeat(1, coords.shape[0]).view(-1, 1),
-    #         coords.repeat(N, 1),
-    #     ], dim=1).to(dtype=torch.int32, device=device)
-    #     feats = torch.full((coords.shape[0], C), value, dtype=dtype, device=device)
-    #     return SparseTensor(feats=feats, coords=coords)
 
-    # def __merge_sparse_cache(self, other: 'SparseTensor') -> dict:
-    #     pdb.set_trace()
-
-    #     new_cache = {}
-    #     for k in set(list(self._spatial_cache.keys()) + list(other._spatial_cache.keys())):
-    #         if k in self._spatial_cache:
-    #             new_cache[k] = self._spatial_cache[k]
-    #         if k in other._spatial_cache:
-    #             if k not in new_cache:
-    #                 new_cache[k] = other._spatial_cache[k]
-    #             else:
-    #                 new_cache[k].update(other._spatial_cache[k])
-    #     return new_cache
-
-    # def __neg__(self) -> 'SparseTensor':
-    #     pdb.set_trace()
-    #     return self.replace(-self.feats)
-    
     def __elemwise__(self, other: Union[torch.Tensor, 'SparseTensor'], op: callable) -> 'SparseTensor':
         # ==> pdb.set_trace()
         if isinstance(other, torch.Tensor): # True
@@ -365,24 +329,18 @@ class SparseTensor:
             other = other.feats
         new_feats = op(self.feats, other)
         new_tensor = self.replace(new_feats)
-        if isinstance(other, SparseTensor): # False
-            pdb.set_trace()
-            new_tensor._spatial_cache = self.__merge_sparse_cache(other)
+        # if isinstance(other, SparseTensor): # False
+        #     pdb.set_trace()
+        #     new_tensor._spatial_cache = self.__merge_sparse_cache(other)
         return new_tensor
 
     def __add__(self, other: Union[torch.Tensor, 'SparseTensor', float]) -> 'SparseTensor':
         return self.__elemwise__(other, torch.add)
 
-    # def __radd__(self, other: Union[torch.Tensor, 'SparseTensor', float]) -> 'SparseTensor':
-    #     pdb.set_trace()
-    #     return self.__elemwise__(other, torch.add)
     
     def __sub__(self, other: Union[torch.Tensor, 'SparseTensor', float]) -> 'SparseTensor':
         return self.__elemwise__(other, torch.sub)
-    
-    # def __rsub__(self, other: Union[torch.Tensor, 'SparseTensor', float]) -> 'SparseTensor':
-    #     pdb.set_trace()
-    #     return self.__elemwise__(other, lambda x, y: torch.sub(y, x))
+
 
     def __mul__(self, other: Union[torch.Tensor, 'SparseTensor', float]) -> 'SparseTensor':
         return self.__elemwise__(other, torch.mul)
@@ -390,14 +348,6 @@ class SparseTensor:
     def __rmul__(self, other: Union[torch.Tensor, 'SparseTensor', float]) -> 'SparseTensor':
         # ==> pdb.set_trace()
         return self.__elemwise__(other, torch.mul)
-
-    # def __truediv__(self, other: Union[torch.Tensor, 'SparseTensor', float]) -> 'SparseTensor':
-    #     pdb.set_trace()
-    #     return self.__elemwise__(other, torch.div)
-
-    # def __rtruediv__(self, other: Union[torch.Tensor, 'SparseTensor', float]) -> 'SparseTensor':
-    #     pdb.set_trace()
-    #     return self.__elemwise__(other, lambda x, y: torch.div(y, x))
 
     def __getitem__(self, idx):
         # ==> pdb.set_trace()
@@ -465,53 +415,7 @@ def sparse_batch_broadcast(input: SparseTensor, other: torch.Tensor) -> torch.Te
     return broadcasted
 
 
-# def sparse_batch_op(input: SparseTensor, other: torch.Tensor, op: callable = torch.add) -> SparseTensor:
-#     """
-#     Broadcast a 1D tensor to a sparse tensor along the batch dimension then perform an operation.
-    
-#     Args:
-#         input (torch.Tensor): 1D tensor to broadcast.
-#         target (SparseTensor): Sparse tensor to broadcast to.
-#         op (callable): Operation to perform after broadcasting. Defaults to torch.add.
-#     """
-#     return input.replace(op(input.feats, sparse_batch_broadcast(input, other)))
-
-
-# def sparse_cat(inputs: List[SparseTensor], dim: int = 0) -> SparseTensor:
-#     """
-#     Concatenate a list of sparse tensors.
-    
-#     Args:
-#         inputs (List[SparseTensor]): List of sparse tensors to concatenate.
-#     """
-#     if dim == 0:
-#         start = 0
-#         coords = []
-#         for input in inputs:
-#             coords.append(input.coords.clone())
-#             coords[-1][:, 0] += start
-#             start += input.shape[0]
-#         coords = torch.cat(coords, dim=0)
-#         feats = torch.cat([input.feats for input in inputs], dim=0)
-#         output = SparseTensor(
-#             coords=coords,
-#             feats=feats,
-#         )
-#     else:
-#         feats = torch.cat([input.feats for input in inputs], dim=dim)
-#         output = inputs[0].replace(feats)
-
-#     return output
-
-
 def sparse_unbind(input: SparseTensor, dim: int) -> List[SparseTensor]:
-    """
-    Unbind a sparse tensor along a dimension.
-    
-    Args:
-        input (SparseTensor): Sparse tensor to unbind.
-        dim (int): Dimension to unbind.
-    """
     # ==> pdb.set_trace()
     if dim == 0:
         return [input[i] for i in range(input.shape[0])]

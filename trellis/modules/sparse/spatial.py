@@ -17,6 +17,7 @@ class SparseDownsample(nn.Module):
     """
     def __init__(self, factor: Union[int, Tuple[int, ...], List[int]]):
         super(SparseDownsample, self).__init__()
+        assert factor == 2
         self.factor = tuple(factor) if isinstance(factor, (list, tuple)) else factor
 
     def forward(self, input: SparseTensor) -> SparseTensor:
@@ -63,6 +64,7 @@ class SparseUpsample(nn.Module):
     """
     def __init__(self, factor: Union[int, Tuple[int, int, int], List[int]]):
         super(SparseUpsample, self).__init__()
+        assert factor == 2
         self.factor = tuple(factor) if isinstance(factor, (list, tuple)) else factor
 
     def forward(self, input: SparseTensor) -> SparseTensor:
@@ -75,6 +77,10 @@ class SparseUpsample(nn.Module):
         idx = input.get_spatial_cache(f'upsample_{factor}_idx')
         if any([x is None for x in [new_coords, new_layout, idx]]):
             raise ValueError('Upsample cache not found. SparseUpsample must be paired with SparseDownsample.')
+        else:
+            # print(f" ................. upsample_{factor}_* SparseUpsample cached OK .................")
+            assert factor == (2, 2, 2)
+
         new_feats = input.feats[idx]
         out = SparseTensor(new_feats, new_coords, input.shape, new_layout)
         out._scale = tuple([s * f for s, f in zip(input._scale, factor)])

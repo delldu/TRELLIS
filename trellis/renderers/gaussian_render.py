@@ -16,7 +16,8 @@ import numpy as np
 from ..representations.gaussian import Gaussian
 # from .sh_utils import eval_sh
 import torch.nn.functional as F
-from easydict import EasyDict as edict
+# from easydict import EasyDict as edict
+import todos
 import pdb
 
 def intrinsics_to_projection(
@@ -47,7 +48,7 @@ def intrinsics_to_projection(
     return ret
 
 # gaussian_render
-def render(viewpoint_camera, pc : Gaussian, pipe, bg_color : torch.Tensor, scaling_modifier = 1.0, override_color = None):
+def gs_render(viewpoint_camera, pc : Gaussian, pipe, bg_color : torch.Tensor, scaling_modifier = 1.0, override_color = None):
     """
     Render the scene. 
     
@@ -75,18 +76,7 @@ def render(viewpoint_camera, pc : Gaussian, pipe, bg_color : torch.Tensor, scali
     kernel_size = pipe.kernel_size # 0.1
     subpixel_offset = torch.zeros((int(viewpoint_camera.image_height), int(viewpoint_camera.image_width), 2), dtype=torch.float32, device="cuda")
 
-    # image_height: int
-    # image_width: int 
-    # tanfovx : float
-    # tanfovy : float
-    # bg : torch.Tensor
-    # scale_modifier : float
-    # viewmatrix : torch.Tensor
-    # projmatrix : torch.Tensor
-    # sh_degree : int
-    # campos : torch.Tensor
-    # prefiltered : bool
-    # debug : bool
+
     raster_settings = GaussianRasterizationSettings(
         image_height=int(viewpoint_camera.image_height), # 1024
         image_width=int(viewpoint_camera.image_width), # 1024
@@ -117,6 +107,8 @@ def render(viewpoint_camera, pc : Gaussian, pipe, bg_color : torch.Tensor, scali
     cov3D_precomp = None
 
     if pipe.compute_cov3D_python: # False
+        pdb.set_trace()
+
         cov3D_precomp = pc.get_covariance(scaling_modifier)
     else:
         scales = pc.get_scaling
@@ -140,6 +132,7 @@ def render(viewpoint_camera, pc : Gaussian, pipe, bg_color : torch.Tensor, scali
         else:
             shs = pc.get_features
     else:
+        pdb.set_trace()
         colors_precomp = override_color
 
     # Rasterize visible Gaussians to image, obtain their radii (on screen). 
@@ -154,13 +147,17 @@ def render(viewpoint_camera, pc : Gaussian, pipe, bg_color : torch.Tensor, scali
         cov3D_precomp = cov3D_precomp # None ???
     )
 
+    # tensor [rendered_image] size: [3, 1024, 1024], min: 0.0, max: 0.733704, mean: 0.004028
+    # tensor [radii] size: [478560], min: 3.0, max: 35.0, mean: 5.125673
+    # tensor [screenspace_points] size: [478560, 3], min: 0.0, max: 0.0, mean: 0.0
+
     # Those Gaussians that were frustum culled or had a radius of 0 were not visible.
     # They will be excluded from value updates used in the splitting criteria.
-    return edict({"render": rendered_image,
-            "viewspace_points": screenspace_points,
-            "visibility_filter" : radii > 0,
-            "radii": radii})
-
+    # return edict({"render": rendered_image,
+    #         "viewspace_points": screenspace_points,
+    #         "visibility_filter" : radii > 0,
+    #         "radii": radii})
+    return edict({"render": rendered_image})
 
 class GaussianRenderer:
     """
@@ -187,7 +184,9 @@ class GaussianRenderer:
         })
         self.rendering_options.update(rendering_options)
         self.bg_color = None
-    
+        # self.pipe -- {'kernel_size': 0.1, 'convert_SHs_python': False, 'compute_cov3D_python': False, 'scale_modifier': 1.0, 'debug': False}
+        # self.rendering_options -- {'resolution': None, 'near': None, 'far': None, 'ssaa': 1, 'bg_color': 'random'}
+
     def render(
             self,
             gausssian: Gaussian,
@@ -212,8 +211,10 @@ class GaussianRenderer:
         near = self.rendering_options["near"]
         far = self.rendering_options["far"]
         ssaa = self.rendering_options["ssaa"]
-        
-        if self.rendering_options["bg_color"] == 'random':
+        # self.rendering_options -- {'resolution': 1024, 'near': 0.8, 'far': 1.6, 'ssaa': 1, 'bg_color': [0, 0, 0]}
+
+        if self.rendering_options["bg_color"] == 'random': # False
+            pdb.set_trace()
             self.bg_color = torch.zeros(3, dtype=torch.float32, device="cuda")
             if np.random.rand() < 0.5:
                 self.bg_color += 1
@@ -240,14 +241,46 @@ class GaussianRenderer:
             "full_proj_transform": (perspective @ view).T.contiguous(),
             "camera_center": camera
         })
+        # ---------------------------------------------------------------------------------------------
+        # (Pdb) for k, v in camera_dict.items(): print(k, v)
+        # image_height 1024
+        # image_width 1024
+        # FoVx tensor(0.698132, device='cuda:0')
+        # FoVy tensor(0.698132, device='cuda:0')
+        # znear 0.8
+        # zfar 1.6
+        # world_view_transform tensor([[     1.000000,      0.000000,      0.000000,      0.000000],
+        #         [     0.000000,      1.000000,      0.000000,      0.000000],
+        #         [     0.000000,     -0.000000,      1.000000,      0.000000],
+        #         [    -0.000000,     -0.000000,      2.000000,      1.000000]],
+        #        device='cuda:0')
+        # projection_matrix tensor([[ 2.747478,  0.000000,  0.000000,  0.000000],
+        #         [ 0.000000,  2.747478,  0.000000,  0.000000],
+        #         [ 0.000000,  0.000000,  2.000000,  1.000000],
+        #         [ 0.000000,  0.000000, -1.600000,  0.000000]], device='cuda:0')
+        # full_proj_transform tensor([[     2.747478,      0.000000,      0.000000,      0.000000],
+        #         [     0.000000,      2.747478,      0.000000,      0.000000],
+        #         [     0.000000,     -0.000000,      2.000000,      1.000000],
+        #         [     0.000000,      0.000000,      2.400000,      2.000000]],
+        #        device='cuda:0')
+        # camera_center tensor([     0.000000,     -0.000000,     -2.000000], device='cuda:0')
+        # ---------------------------------------------------------------------------------------------
 
         # Render
-        render_ret = render(camera_dict, gausssian, self.pipe, self.bg_color, override_color=colors_overwrite, scaling_modifier=self.pipe.scale_modifier)
+        assert colors_overwrite == None
+        # self.bg_color -- tensor([0., 0., 0.], device='cuda:0')
+        # self.pipe -- {'kernel_size': 0.1, 'convert_SHs_python': False, 'compute_cov3D_python': False, 'scale_modifier': 1.0, 'debug': False, 'use_mip_gaussian': True}
 
-        if ssaa > 1:
+        render_ret = gs_render(camera_dict, gausssian, self.pipe, self.bg_color, override_color=colors_overwrite, 
+            scaling_modifier=self.pipe.scale_modifier) # self.pipe.scale_modifier -- 1.0
+
+        assert ssaa == 1
+        if ssaa > 1: # False
+            pdb.set_trace()
             render_ret.render = F.interpolate(render_ret.render[None], size=(resolution, resolution), mode='bilinear', align_corners=False, antialias=True).squeeze()
             
         ret = edict({
-            'color': render_ret['render']
+            'color': render_ret['render'] # render_ret['render'].size() -- [3, 1024, 1024]
+
         })
         return ret

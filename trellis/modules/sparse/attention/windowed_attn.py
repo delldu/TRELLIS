@@ -74,6 +74,8 @@ def sparse_windowed_scaled_dot_product_self_attention(
         shift (int): The shift to use.
     """
     assert len(qkv.shape) == 4 and qkv.shape[1] == 3, f"Invalid shape for qkv, got {qkv.shape}, expected [N, *, 3, H, C]"
+    assert window_size == 8
+    assert shift_window == 0 or shift_window == 4
 
     serialization_spatial_cache_name = f'window_partition_{window_size}_{shift_window}'
     serialization_spatial_cache = qkv.get_spatial_cache(serialization_spatial_cache_name)
@@ -81,6 +83,8 @@ def sparse_windowed_scaled_dot_product_self_attention(
         fwd_indices, bwd_indices, seq_lens, seq_batch_indices = calc_window_partition(qkv, window_size, shift_window)
         qkv.register_spatial_cache(serialization_spatial_cache_name, (fwd_indices, bwd_indices, seq_lens, seq_batch_indices))
     else:
+        # print(f" ................. {serialization_spatial_cache_name} sparse_windowed_scaled_dot_product_self_attention cache OK .................")
+        # serialization_spatial_cache_name == window_partition_8_0 or window_partition_8_4
         fwd_indices, bwd_indices, seq_lens, seq_batch_indices = serialization_spatial_cache
 
     M = fwd_indices.shape[0]

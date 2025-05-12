@@ -71,9 +71,7 @@ class SparseMultiHeadAttention(nn.Module):
         self._type = type
         self.attn_mode = attn_mode
         self.window_size = window_size
-        # self.shift_sequence = shift_sequence
         self.shift_window = shift_window
-        # self.serialize_mode = serialize_mode
         self.use_rope = use_rope
         self.qk_rms_norm = qk_rms_norm
 
@@ -114,11 +112,6 @@ class SparseMultiHeadAttention(nn.Module):
         x_feats = x_feats.reshape(*x_feats.shape[:2], num_fused, self.num_heads, -1)
         return x.replace(x_feats.squeeze(0)) if isinstance(x, SparseTensor) else x_feats
 
-    # def _rope(self, qkv: SparseTensor) -> SparseTensor:
-    #     q, k, v = qkv.feats.unbind(dim=1)   # [T, H, C]
-    #     q, k = self.rope(q, k, qkv.coords[:, 1:])
-    #     qkv = qkv.replace(torch.stack([q, k, v], dim=1)) 
-    #     return qkv
     
     def forward(self, x: Union[SparseTensor, torch.Tensor], context: Optional[Union[SparseTensor, torch.Tensor]] = None) -> Union[SparseTensor, torch.Tensor]:
         if self._type == "self":
