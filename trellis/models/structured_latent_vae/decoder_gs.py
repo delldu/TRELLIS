@@ -71,11 +71,15 @@ class SLatGaussianDecoder(SparseTransformerBase):
 
 
     def _build_perturbation(self) -> None:
+        assert self.rep_config['num_gaussians'] == 32
+        assert self.rep_config['voxel_size'] == 1.5
+
         perturbation = [hammersley_sequence(3, i, self.rep_config['num_gaussians']) for i in range(self.rep_config['num_gaussians'])]
         perturbation = torch.tensor(perturbation).float() * 2 - 1
         perturbation = perturbation / self.rep_config['voxel_size']
         perturbation = torch.atanh(perturbation).to(self.device)
         self.register_buffer('offset_perturbation', perturbation)
+        # tensor [perturbation] size: [32, 3], min: -0.804719, max: 0.733169, mean: -0.039218
 
     def _calc_layout(self) -> None:
         self.layout = {
@@ -85,11 +89,26 @@ class SLatGaussianDecoder(SparseTransformerBase):
             '_rotation' : {'shape': (self.rep_config['num_gaussians'], 4), 'size': self.rep_config['num_gaussians'] * 4},
             '_opacity' : {'shape': (self.rep_config['num_gaussians'], 1), 'size': self.rep_config['num_gaussians']},
         }
+        # self.layout -------------------------------------------------
+        # _xyz {'shape': (32, 3), 'size': 96}
+        # _features_dc {'shape': (32, 1, 3), 'size': 96}
+        # _scaling {'shape': (32, 3), 'size': 96}
+        # _rotation {'shape': (32, 4), 'size': 128}
+        # _opacity {'shape': (32, 1), 'size': 32}
+
         start = 0
         for k, v in self.layout.items():
             v['range'] = (start, start + v['size'])
             start += v['size']
-        self.out_channels = start
+        # self.layout -------------------------------------------------
+        # _xyz {'shape': (32, 3), 'size': 96, 'range': (0, 96)}
+        # _features_dc {'shape': (32, 1, 3), 'size': 96, 'range': (96, 192)}
+        # _scaling {'shape': (32, 3), 'size': 96, 'range': (192, 288)}
+        # _rotation {'shape': (32, 4), 'size': 128, 'range': (288, 416)}
+        # _opacity {'shape': (32, 1), 'size': 32, 'range': (416, 448)}
+        
+        assert start == 448
+        self.out_channels = start # 448
 
     def to_representation(self, x: sp.SparseTensor) -> List[Gaussian]:
         """
@@ -104,17 +123,30 @@ class SLatGaussianDecoder(SparseTransformerBase):
         ret = []
         for i in range(x.shape[0]): # 1
             # xxxx_3333
+            # (Pdb) for k, v in self.rep_config.items(): print(k, v)
+            # -------------------------------------------------------------------------------------------
+            # lr {'_xyz': 1.0, '_features_dc': 1.0, '_opacity': 1.0, '_scaling': 1.0, '_rotation': 0.1}
+            # perturb_offset True
+            # voxel_size 1.5
+            # num_gaussians 32
+            # 2d_filter_kernel_size 0.1
+            # 3d_filter_kernel_size 0.0009
+            # scaling_bias 0.004
+            # opacity_bias 0.1
+            # scaling_activation softplus
+            # -------------------------------------------------------------------------------------------
+
             representation = Gaussian(
                 sh_degree=0,
                 aabb=[-0.5, -0.5, -0.5, 1.0, 1.0, 1.0],
-                mininum_kernel_size = self.rep_config['3d_filter_kernel_size'],
-                scaling_bias = self.rep_config['scaling_bias'],
-                opacity_bias = self.rep_config['opacity_bias'],
-                scaling_activation = self.rep_config['scaling_activation']
+                mininum_kernel_size = self.rep_config['3d_filter_kernel_size'], # 0.0009
+                scaling_bias = self.rep_config['scaling_bias'], # 0.004
+                opacity_bias = self.rep_config['opacity_bias'], # 0.1
+                scaling_activation = self.rep_config['scaling_activation'] # 'softplus'
             )
+
             # self.resolution === 64
             # x.layout[i] -- slice(0, 14955, None)
-
             # tensor [x.coords] size: [14955, 4], min: 0.0, max: 63.0, mean: 23.262018
             xyz = (x.coords[x.layout[i]][:, 1:].float() + 0.5) / self.resolution
             # tensor [xyz] size: [14955, 3], min: 0.007812, max: 0.992188, mean: 0.492438

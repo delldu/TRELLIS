@@ -65,8 +65,10 @@ class SparseFeatures2Mesh:
         self.mesh_extractor = FlexiCubes(device=device)
         self.sdf_bias = -1.0 / res
         verts, cube = construct_dense_grid(self.res, self.device)
-        self.reg_c = cube.to(self.device)
-        self.reg_v = verts.to(self.device)
+        ## tensor [verts] size: [16974593, 3], min: 0.0, max: 256.0, mean: 128.0
+        ## tensor [cube] size: [16777216, 8], min: 0.0, max: 16974592.0, mean: 8487296.0
+        self.reg_c = cube.to(self.device) # size: [16777216, 8]
+        self.reg_v = verts.to(self.device) # size: [16974593, 3]
         self.use_color = use_color
         self._calc_layout()
         # ==> pdb.set_trace()
@@ -83,11 +85,17 @@ class SparseFeatures2Mesh:
             '''
             LAYOUTS['color'] = {'shape': (8, 6,), 'size': 8 * 6}
         self.layouts = edict(LAYOUTS)
+        # self.layouts -------------------------------------------------
+        # sdf {'shape': [8, 1], 'size': 8, 'range': [0, 8]}
+        # deform {'shape': [8, 3], 'size': 24, 'range': [8, 32]}
+        # weights {'shape': [21], 'size': 21, 'range': [32, 53]}
+        # color {'shape': [8, 6], 'size': 48, 'range': [53, 101]}
+        # self.layouts -------------------------------------------------
         start = 0
         for k, v in self.layouts.items():
             v['range'] = (start, start + v['size'])
             start += v['size']
-        self.feats_channels = start
+        self.feats_channels = start # 101 
 
     # --------------------------------------------------------------        
     def get_layout(self, feats : torch.Tensor, name : str):
@@ -110,33 +118,47 @@ class SparseFeatures2Mesh:
         # ---------------------------------------------------------------------------------------
 
         # add sdf bias to verts_attrs
-        coords = cubefeats.coords[:, 1:]
-        feats = cubefeats.feats
+        coords = cubefeats.coords[:, 1:] # size(): [957120, 4] --> [957120, 3]
+        feats = cubefeats.feats # size() -- ([957120, 101] ??? 101
         
         sdf, deform, color, weights = [self.get_layout(feats, name) for name in ['sdf', 'deform', 'color', 'weights']]
         sdf += self.sdf_bias
+
+        assert  self.use_color == True
         v_attrs = [sdf, deform, color] if self.use_color else [sdf, deform]
+        # v_attrs is list: len = 3
+        #     tensor [sdf] size: [957120, 8, 1], min: -0.144015, max: 0.257282, mean: 0.003073
+        #     tensor [deform] size: [957120, 8, 3], min: -7.113086, max: 6.312462, mean: 0.00125
+        #     tensor [color] size: [957120, 8, 6], min: -13.710188, max: 9.915195, mean: -0.954984
+
         v_pos, v_attrs, reg_loss = sparse_cube2verts(coords, torch.cat(v_attrs, dim=-1), training=training)
         v_attrs_d = get_dense_attrs(v_pos, v_attrs, res=self.res+1, sdf_init=True)
+
+        # todos.debug.output_var("weights", weights)
+        # tensor [weights] size: [957120, 21], min: -11.96298, max: 16.188641, mean: 0.010774
         weights_d = get_dense_attrs(coords, weights, res=self.res, sdf_init=False)
-        if self.use_color:
+        # tensor [weights_d] size: [16777216, 21], min: -11.96298, max: 16.188641, mean: 0.000615
+
+        if self.use_color: # True
             sdf_d, deform_d, colors_d = v_attrs_d[..., 0], v_attrs_d[..., 1:4], v_attrs_d[..., 4:]
         else:
             sdf_d, deform_d = v_attrs_d[..., 0], v_attrs_d[..., 1:4]
             colors_d = None
-            
+
         x_nx3 = get_defomed_verts(self.reg_v, deform_d, self.res)
-        
+        # tensor [x_nx3] size: [16974593, 3], min: -0.500935, max: 0.50072, mean: -2e-06
+
+        # tensor [sdf_d] size: [16974593], min: -0.138959, max: 1.0, mean: 0.934898
         vertices, faces, L_dev, colors = self.mesh_extractor(
             voxelgrid_vertices=x_nx3,
             scalar_field=sdf_d,
             cube_idx=self.reg_c,
-            resolution=self.res,
+            resolution=self.res, # 256
             beta=weights_d[:, :12],
             alpha=weights_d[:, 12:20],
             gamma_f=weights_d[:, 20],
             voxelgrid_colors=colors_d,
-            training=training)
+            training=training) # training === False
         
         # ===> pdb.set_trace()
         mesh = MeshExtractResult(vertices=vertices, faces=faces, vertex_attrs=colors, res=self.res)

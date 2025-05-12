@@ -441,9 +441,9 @@ class SLatMeshDecoder(SparseTransformerBase):
                 out_channels=model_channels // 4 # 192
             ),
             SparseSubdivideBlock3d(
-                channels=model_channels // 4,
-                resolution=resolution * 2,
-                out_channels=model_channels // 8
+                channels=model_channels // 4, # 192 ???
+                resolution=resolution * 2, # 128 ???
+                out_channels=model_channels // 8 # 96 ???
             )
         ])
         self.out_layer = SparseLinear(model_channels // 8, self.out_channels)
@@ -490,9 +490,7 @@ class SLatMeshDecoder(SparseTransformerBase):
     
 cube_corners = torch.tensor([[0, 0, 0], [1, 0, 0], [0, 1, 0], [1, 1, 0], [0, 0, 1], [
         1, 0, 1], [0, 1, 1], [1, 1, 1]], dtype=torch.int)
-# cube_neighbor = torch.tensor([[1, 0, 0], [-1, 0, 0], [0, 1, 0], [0, -1, 0], [0, 0, 1], [0, 0, -1]])
-# cube_edges = torch.tensor([0, 1, 1, 5, 4, 5, 0, 4, 2, 3, 3, 7, 6, 7, 2, 6,
-#                 2, 0, 3, 1, 7, 5, 6, 4], dtype=torch.long, requires_grad=False)
+
 
 # --------------------------------------------------------------        
 def construct_dense_grid(res, device='cuda'):
@@ -531,6 +529,7 @@ def cubes_to_verts(num_verts, cubes, value, reduce='mean'):
 def sparse_cube2verts(coords, feats, training=True):
     new_coords, cubes = construct_voxel_grid(coords)
     new_feats = cubes_to_verts(new_coords.shape[0], cubes, feats)
+    assert training == False
     if training:
         con_loss = torch.mean((feats - new_feats[cubes]) ** 2)
     else:
@@ -541,6 +540,7 @@ def sparse_cube2verts(coords, feats, training=True):
 def get_dense_attrs(coords : torch.Tensor, feats : torch.Tensor, res : int, sdf_init=True):
     F = feats.shape[-1]
     dense_attrs = torch.zeros([res] * 3 + [F], device=feats.device)
+    assert sdf_init == False
     if sdf_init:
         dense_attrs[..., 0] = 1 # initial outside sdf value
     dense_attrs[coords[:, 0], coords[:, 1], coords[:, 2], :] = feats
