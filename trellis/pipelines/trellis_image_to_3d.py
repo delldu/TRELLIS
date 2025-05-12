@@ -171,9 +171,14 @@ class TrellisImageTo3DPipeline(Pipeline):
         
         image = self.image_cond_model_transform(image).cuda() #to(self.device)
         # features = self.models['image_cond_model'](image, is_training=True)['x_prenorm']
+
+        # tensor [image] size: [1, 3, 518, 518], min: -2.117904, max: 2.323529, mean: -1.657714
         features = self.load_model('image_cond_model').float()(image, is_training=True)['x_prenorm']
+        # tensor [features] size: [1, 1374, 1024], min: -664.607056, max: 402.074707, mean: -0.280811
         self.unload_models(['image_cond_model'])
-        patchtokens = F.layer_norm(features, features.shape[-1:])
+        patchtokens = F.layer_norm(features, features.shape[-1:]) # features.shape[-1:] == [1024]
+        # tensor [patchtokens] size: [1, 1374, 1024], min: -25.644331, max: 15.487422, mean: 0.0
+
         return patchtokens
         
     def get_cond(self, image: Union[torch.Tensor, list[Image.Image]]) -> dict:
@@ -207,24 +212,34 @@ class TrellisImageTo3DPipeline(Pipeline):
             num_samples (int): The number of samples to generate.
             sampler_params (dict): Additional parameters for the sampler.
         """
+        # cond is dict:
+        #     tensor [cond] size: [1, 1374, 1024], min: -25.644331, max: 15.487422, mean: 0.0
+        #     tensor [neg_cond] size: [1, 1374, 1024], min: 0.0, max: 0.0, mean: 0.0
+        # num_samples = 1
+        # sampler_params = {'steps': 25, 'cfg_strength': 5.0, 'cfg_interval': [0.5, 1.0], 'rescale_t': 3.0}
+
         # Sample occupancy latent
         flow_model = self.load_model('sparse_structure_flow_model') # SparseStructureFlowModel,  device='cuda:0', dtype=torch.float16
-        #pdb.set_trace()
 
         reso = flow_model.resolution # 16
         noise = torch.randn(num_samples, flow_model.in_channels, reso, reso, reso).to(flow_model.device)
+        # tensor [noise] size: [1, 8, 16, 16, 16], min: -4.184124, max: 3.802687, mean: 0.000481
         sampler_params = {**self.sparse_structure_sampler_params, **sampler_params}
+        # sampler_params -- {'steps': 25, 'cfg_strength': 5.0, 'cfg_interval': [0.5, 1.0], 'rescale_t': 3.0}
 
         # self.sparse_structure_sampler -- trellis.pipelines.samplers.flow_euler.FlowEulerGuidanceIntervalSampler
         z_s = self.sparse_structure_sampler.sample(flow_model, noise, **cond, **sampler_params, verbose=True).samples
         self.unload_models(['sparse_structure_flow_model',])
-
-        #pdb.set_trace()
+        # tensor [z_s] size: [1, 8, 16, 16, 16], min: -5.693636, max: 4.097641, mean: 0.010038
         
         # Decode occupancy latent
         decoder = self.load_model('sparse_structure_decoder') # SparseStructureDecoder, 
+        # tensor [decoder(z_s)] size: [1, 1, 64, 64, 64], min: -216.489441, max: 181.025513, mean: -145.066437
+        # torch.argwhere(decoder(z_s)>0).size() -- [14955, 5]
+
         coords = torch.argwhere(decoder(z_s)>0)[:, [0, 2, 3, 4]].int()
         self.unload_models(['sparse_structure_decoder'])
+        # tensor [coords] size: [14955, 4], min: 0.0, max: 63.0, mean: 23.262018
 
         return coords
 
@@ -248,12 +263,13 @@ class TrellisImageTo3DPipeline(Pipeline):
             ret['mesh'] = self.load_model('slat_decoder_mesh')(slat) # SLatMeshDecoder
             self.unload_models(['slat_decoder_mesh'])
         if 'gaussian' in formats:
-            ret['gaussian'] = self.load_model('slat_decoder_gs')(slat)
+            ret['gaussian'] = self.load_model('slat_decoder_gs')(slat) # SLatGaussianDecoder
             self.unload_models(['slat_decoder_gs'])
         if 'radiance_field' in formats:
             ret['radiance_field'] = self.load_model('slat_decoder_rf')(slat)
             self.unload_models(['slat_decoder_rf'])
         torch.cuda.empty_cache()
+
         return ret
     
     def sample_slat(
@@ -264,27 +280,26 @@ class TrellisImageTo3DPipeline(Pipeline):
     ) -> sp.SparseTensor:
         """
         Sample structured latent with the given conditioning.
-        
-        Args:
-            cond (dict): The conditioning information.
-            coords (torch.Tensor): The coordinates of the sparse structure.
-            sampler_params (dict): Additional parameters for the sampler.
         """
-        # Sample structured latent
-        # flow_model = self.models['slat_flow_model']
-        # pdb.set_trace()
-        
+        # ----------------------------------------------------------------------
+        # cond is dict:
+        #     tensor [cond] size: [1, 1374, 1024], min: -25.644331, max: 15.487422, mean: 0.0
+        #     tensor [neg_cond] size: [1, 1374, 1024], min: 0.0, max: 0.0, mean: 0.0
+        # tensor [coords] size: [14955, 4], min: 0.0, max: 63.0, mean: 23.262018
+        # sampler_params = {}
+        # ----------------------------------------------------------------------
+
         flow_model = self.load_model('slat_flow_model') # SLatFlowModel
         noise = sp.SparseTensor(
             feats=torch.randn(coords.shape[0], flow_model.in_channels).to(flow_model.device), # (14955, 8)
             coords=coords,
         )
         sampler_params = {**self.slat_sampler_params, **sampler_params}
-        # (Pdb) sampler_params
+        # (Pdb) sampler_params --
         # {'steps': 25, 'cfg_strength': 5.0, 'cfg_interval': [0.5, 1.0], 'rescale_t': 3.0}
-
         # self.slat_sampler -- 
         # <trellis.pipelines.samplers.flow_euler.FlowEulerGuidanceIntervalSampler object at 0x7f332df17c70>
+
         slat = self.slat_sampler.sample(
             flow_model,
             noise,
@@ -297,7 +312,13 @@ class TrellisImageTo3DPipeline(Pipeline):
         std = torch.tensor(self.slat_normalization['std'])[None].to(slat.device)
         mean = torch.tensor(self.slat_normalization['mean'])[None].to(slat.device)
         slat = slat * std + mean
-        
+
+        # ----------------------------------------------------------------------
+        # slat -- <trellis.modules.sparse.basic.SparseTensor object at 0x7f6a2e5c78b0>
+        # tensor [slat.coords] size: [14955, 4], min: 0.0, max: 63.0, mean: 23.262018
+        # tensor [slat.feats] size: [14955, 8], min: -9.589689, max: 9.938703, mean: -0.068928
+        # ----------------------------------------------------------------------
+
         return slat
 
     @torch.no_grad()

@@ -51,6 +51,7 @@ class MeshRenderer:
         self.rendering_options.update(rendering_options)
         self.glctx = dr.RasterizeCudaContext(device=device)
         self.device=device
+        pdb.set_trace()
         
     def render(
             self,
