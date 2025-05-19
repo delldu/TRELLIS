@@ -2,7 +2,9 @@ from typing import *
 import torch
 import math
 from .. import SparseTensor
-from .. import DEBUG, ATTN
+from .. import ATTN
+import todos
+import pdb
 
 if ATTN == 'xformers':
     import xformers.ops as xops
@@ -36,28 +38,49 @@ def calc_window_partition(
         (List[int]): Sequence lengths.
         (List[int]): Sequence batch indices.
     """
+    # tensor.shape = torch.Size([1, 3, 12, 64]), 
+
+    # tensor.coords.shape -- [14955, 4]
     DIM = tensor.coords.shape[1] - 1
+    assert DIM == 3
+    assert isinstance(shift_window, int) == True
+    assert isinstance(window_size, int) == True
+    assert window_size == 8
+
     shift_window = (shift_window,) * DIM if isinstance(shift_window, int) else shift_window
     window_size = (window_size,) * DIM if isinstance(window_size, int) else window_size
     shifted_coords = tensor.coords.clone().detach()
+    # shifted_coords.size() -- [14955, 4]
+    # torch.tensor(shift_window, device=tensor.device, dtype=torch.int32).unsqueeze(0) == 0 or 4 ...
     shifted_coords[:, 1:] += torch.tensor(shift_window, device=tensor.device, dtype=torch.int32).unsqueeze(0)
 
-    MAX_COORDS = shifted_coords[:, 1:].max(dim=0).values.tolist()
-    NUM_WINDOWS = [math.ceil((mc + 1) / ws) for mc, ws in zip(MAX_COORDS, window_size)]
+    MAX_COORDS = shifted_coords[:, 1:].max(dim=0).values.tolist() # [59, 45, 63]
+    NUM_WINDOWS = [math.ceil((mc + 1) / ws) for mc, ws in zip(MAX_COORDS, window_size)] # NUM_WINDOWS -- [8, 6, 8]
     OFFSET = torch.cumprod(torch.tensor([1] + NUM_WINDOWS[::-1]), dim=0).tolist()[::-1]
+    # OFFSET -- [384, 48, 8, 1]
 
     shifted_coords[:, 1:] //= torch.tensor(window_size, device=tensor.device, dtype=torch.int32).unsqueeze(0)
+    # shifted_coords[:, 1:] //= window_size
     shifted_indices = (shifted_coords * torch.tensor(OFFSET, device=tensor.device, dtype=torch.int32).unsqueeze(0)).sum(dim=1)
-    fwd_indices = torch.argsort(shifted_indices)
+
+    fwd_indices = torch.argsort(shifted_indices) # fwd_indices.size() -- [14955]
     bwd_indices = torch.empty_like(fwd_indices)
-    bwd_indices[fwd_indices] = torch.arange(fwd_indices.shape[0], device=tensor.device)
+    bwd_indices[fwd_indices] = torch.arange(fwd_indices.shape[0], device=tensor.device) # fwd_indices.shape[0] --- 14955
+
+
     seq_lens = torch.bincount(shifted_indices)
-    seq_batch_indices = torch.arange(seq_lens.shape[0], device=tensor.device, dtype=torch.int32) // OFFSET[0]
+    # seq_lens.size() -- torch.Size([384]), [0, 0, 0,  ..., 0, 6, 2]
+    # seq_batch_indices = torch.arange(seq_lens.shape[0], device=tensor.device, dtype=torch.int32) // OFFSET[0]
     mask = seq_lens != 0
     seq_lens = seq_lens[mask].tolist()
-    seq_batch_indices = seq_batch_indices[mask].tolist()
+    # seq_batch_indices = seq_batch_indices[mask].tolist()
 
-    return fwd_indices, bwd_indices, seq_lens, seq_batch_indices
+    # return fwd_indices, bwd_indices, seq_lens, seq_batch_indices
+    # tensor [fwd_indices] size: [14955], min: 0.0, max: 14954.0, mean: 7476.999023
+    # tensor [bwd_indices] size: [14955], min: 0.0, max: 14954.0, mean: 7476.999512
+    # seq_lens is list: len = 134
+    return fwd_indices, bwd_indices, seq_lens
+
     
 def sparse_windowed_scaled_dot_product_self_attention(
     qkv: SparseTensor,
@@ -73,38 +96,47 @@ def sparse_windowed_scaled_dot_product_self_attention(
         shift_window (Tuple[int, int, int]): The shift of serialized coordinates.
         shift (int): The shift to use.
     """
-    assert len(qkv.shape) == 4 and qkv.shape[1] == 3, f"Invalid shape for qkv, got {qkv.shape}, expected [N, *, 3, H, C]"
+
+    # qkv.shape = torch.Size([1, 3, 12, 64]), 
+    assert len(qkv.shape) == 4 and qkv.shape[1] == 3, f"Invalid shape for qkv, got {qkv.shape}, expected [N, 3, H, C]"
     assert window_size == 8
     assert shift_window == 0 or shift_window == 4
 
-    serialization_spatial_cache_name = f'window_partition_{window_size}_{shift_window}'
-    serialization_spatial_cache = qkv.get_spatial_cache(serialization_spatial_cache_name)
-    if serialization_spatial_cache is None:
-        fwd_indices, bwd_indices, seq_lens, seq_batch_indices = calc_window_partition(qkv, window_size, shift_window)
-        qkv.register_spatial_cache(serialization_spatial_cache_name, (fwd_indices, bwd_indices, seq_lens, seq_batch_indices))
-    else:
-        # print(f" ................. {serialization_spatial_cache_name} sparse_windowed_scaled_dot_product_self_attention cache OK .................")
-        # serialization_spatial_cache_name == window_partition_8_0 or window_partition_8_4
-        fwd_indices, bwd_indices, seq_lens, seq_batch_indices = serialization_spatial_cache
+    # xxxx_3333
+    # serialization_spatial_cache_name = f'window_partition_{window_size}_{shift_window}'
+    # serialization_spatial_cache = qkv.get_spatial_cache(serialization_spatial_cache_name)
+    # if serialization_spatial_cache is None:
+    #     fwd_indices, bwd_indices, seq_lens, seq_batch_indices = calc_window_partition(qkv, window_size, shift_window)
+    #     qkv.register_spatial_cache(serialization_spatial_cache_name, (fwd_indices, bwd_indices, seq_lens, seq_batch_indices))
+    # else:
+    #     # print(f" ................. {serialization_spatial_cache_name} sparse_windowed_scaled_dot_product_self_attention cache OK .................")
+    #     # serialization_spatial_cache_name == window_partition_8_0 or window_partition_8_4
+    #     fwd_indices, bwd_indices, seq_lens, seq_batch_indices = serialization_spatial_cache
+    # fwd_indices, bwd_indices, seq_lens, seq_batch_indices = calc_window_partition(qkv, window_size, shift_window)
+    fwd_indices, bwd_indices, seq_lens = calc_window_partition(qkv, window_size, shift_window)
 
-    M = fwd_indices.shape[0]
+    M = fwd_indices.shape[0] #  tensor [fwd_indices] size: [14955], min: 0.0, max: 14954.0, mean: 7476.999023
     T = qkv.feats.shape[0]
     H = qkv.feats.shape[2]
     C = qkv.feats.shape[3]
-    
     qkv_feats = qkv.feats[fwd_indices]      # [M, 3, H, C]
 
-    if DEBUG:
-        start = 0
-        qkv_coords = qkv.coords[fwd_indices]
-        for i in range(len(seq_lens)):
-            seq_coords = qkv_coords[start:start+seq_lens[i]]
-            assert (seq_coords[:, 0] == seq_batch_indices[i]).all(), f"SparseWindowedScaledDotProductSelfAttention: batch index mismatch"
-            assert (seq_coords[:, 1:].max(dim=0).values - seq_coords[:, 1:].min(dim=0).values < window_size).all(), \
-                    f"SparseWindowedScaledDotProductSelfAttention: window size exceeded"
-            start += seq_lens[i]
+    # print(f"qkv.shape = {qkv.shape}, seq_lens = {seq_lens} ...")
+    # qkv.shape = torch.Size([1, 3, 12, 64]), 
+    # seq_lens = [6, 2, 18, 4, 21, 46, 56, 4, 18, 2, 35, 50, 95, 273, 395, 140, 
+    #     9, 12, 38, 159, 60, 2, 193, 143, 1, 20, 61, 4, 147, 310, 11, 1, 
+    #     9, 55, 194, 30, 173, 198, 15, 26, 85, 6, 9, 14, 213, 94, 40, 85, 
+    #     91, 72, 48, 56, 4, 200, 286, 217, 192, 224, 267, 217, 183, 18, 156, 149, 
+    #     57, 37, 24, 20, 34, 64, 6, 2, 3, 129, 32, 36, 39, 58, 34, 62, 66, 6, 
+    #     179, 166, 171, 147, 184, 157, 186, 202, 30, 96, 24, 39, 33, 44, 39, 57, 73, 
+    #     6, 6, 1, 164, 101, 25, 39, 35, 53, 65, 67, 6, 200, 305, 236, 238, 234, 216, 
+    #     238, 259, 24, 147, 110, 37, 80, 34, 82, 80, 84, 9, 8, 2, 204, 116, 2, 26, 56, 4, 
+    #     158, 217, 5, 6, 102, 260, 86, 186, 139, 46, 85, 17, 9, 34, 1, 4, 30, 92, 21, 27, 13, 58, 
+    #     210, 386, 141, 36, 8, 17, 57, 136, 217, 52, 2]
+
 
     if all([seq_len == window_size for seq_len in seq_lens]):
+        pdb.set_trace()
         B = len(seq_lens)
         N = window_size
         qkv_feats = qkv_feats.reshape(B, N, 3, H, C)
@@ -112,12 +144,16 @@ def sparse_windowed_scaled_dot_product_self_attention(
             q, k, v = qkv_feats.unbind(dim=2)                       # [B, N, H, C]
             out = xops.memory_efficient_attention(q, k, v)          # [B, N, H, C]
         elif ATTN == 'flash_attn':
+            pdb.set_trace()
             out = flash_attn.flash_attn_qkvpacked_func(qkv_feats)   # [B, N, H, C]
         else:
             raise ValueError(f"Unknown attention module: {ATTN}")
         out = out.reshape(B * N, H, C)                              # [M, H, C]
     else:
+        # ==> pdb.set_trace()
+
         if ATTN == 'xformers':
+            # tensor [qkv_feats] size: [14955, 3, 12, 64], min: -18.796875, max: 18.203125, mean: -0.034009
             q, k, v = qkv_feats.unbind(dim=1)                       # [M, H, C]
             q = q.unsqueeze(0)                                      # [1, M, H, C]
             k = k.unsqueeze(0)                                      # [1, M, H, C]
@@ -125,14 +161,13 @@ def sparse_windowed_scaled_dot_product_self_attention(
             mask = xops.fmha.BlockDiagonalMask.from_seqlens(seq_lens)
             out = xops.memory_efficient_attention(q, k, v, mask)[0] # [M, H, C]
         elif ATTN == 'flash_attn':
+            pdb.set_trace()
             cu_seqlens = torch.cat([torch.tensor([0]), torch.cumsum(torch.tensor(seq_lens), dim=0)], dim=0) \
                         .to(qkv.device).int()
             out = flash_attn.flash_attn_varlen_qkvpacked_func(qkv_feats, cu_seqlens, max(seq_lens)) # [M, H, C]
 
+    # tensor [out] size: [14955, 12, 64], min: -16.890625, max: 8.914062, mean: -0.022558
     out = out[bwd_indices]      # [T, H, C]
-
-    if DEBUG:
-        qkv_coords = qkv_coords[bwd_indices]
-        assert torch.equal(qkv_coords, qkv.coords), "SparseWindowedScaledDotProductSelfAttention: coordinate mismatch"
+    # tensor [out] size: [14955, 12, 64], min: -16.890625, max: 8.914062, mean: -0.022558
 
     return qkv.replace(out)

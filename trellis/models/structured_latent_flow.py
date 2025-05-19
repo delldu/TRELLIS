@@ -58,7 +58,7 @@ class SparseResBlock3d(nn.Module):
         emb_out = self.emb_layers(emb).type(x.dtype)
         scale, shift = torch.chunk(emb_out, 2, dim=1)
 
-        x = self._updown(x)
+        x = self._updown(x) # down or up ???
         h2 = x.replace(self.norm1.float()(x.feats))
         h2 = h2.replace(F.silu(h2.feats))
         h2 = self.conv1(h2)
