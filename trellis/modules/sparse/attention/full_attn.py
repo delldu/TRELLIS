@@ -1,16 +1,18 @@
 from typing import *
 import torch
 from .. import SparseTensor
+import xformers.ops as xops
+
 from .. import DEBUG, ATTN
 import todos
 import pdb
 
-if ATTN == 'xformers':
-    import xformers.ops as xops
-elif ATTN == 'flash_attn':
-    import flash_attn
-else:
-    raise ValueError(f"Unknown attention module: {ATTN}")
+# if ATTN == 'xformers':
+#     import xformers.ops as xops
+# elif ATTN == 'flash_attn':
+#     import flash_attn
+# else:
+#     raise ValueError(f"Unknown attention module: {ATTN}")
 
 
 __all__ = [
@@ -112,6 +114,7 @@ def sparse_scaled_dot_product_attention(*args, **kwargs):
             k = k.reshape(N * L, H, CI)     # [T_KV, H, Ci]
             v = v.reshape(N * L, H, CO)     # [T_KV, H, Co]
 
+    # xxxx_3333
     # if DEBUG:
     #     if s is not None:
     #         for i in range(s.shape[0]):
@@ -122,29 +125,40 @@ def sparse_scaled_dot_product_attention(*args, **kwargs):
     #         assert k.shape[:2] == [1, sum(kv_seqlen)], f"SparseScaledDotProductSelfAttention: k shape mismatch"
     #         assert v.shape[:2] == [1, sum(kv_seqlen)], f"SparseScaledDotProductSelfAttention: v shape mismatch"
 
-    if ATTN == 'xformers':
-        if num_all_args == 1:
-            q, k, v = qkv.unbind(dim=1)
-        elif num_all_args == 2:
-            k, v = kv.unbind(dim=1)
-        q = q.unsqueeze(0)
-        k = k.unsqueeze(0)
-        v = v.unsqueeze(0)
-        mask = xops.fmha.BlockDiagonalMask.from_seqlens(q_seqlen, kv_seqlen)
-        out = xops.memory_efficient_attention(q, k, v, mask)[0]
-    elif ATTN == 'flash_attn':
-        pdb.set_trace()
-        cu_seqlens_q = torch.cat([torch.tensor([0]), torch.cumsum(torch.tensor(q_seqlen), dim=0)]).int().to(device)
-        if num_all_args in [2, 3]:
-            cu_seqlens_kv = torch.cat([torch.tensor([0]), torch.cumsum(torch.tensor(kv_seqlen), dim=0)]).int().to(device)
-        if num_all_args == 1:
-            out = flash_attn.flash_attn_varlen_qkvpacked_func(qkv, cu_seqlens_q, max(q_seqlen))
-        elif num_all_args == 2:
-            out = flash_attn.flash_attn_varlen_kvpacked_func(q, kv, cu_seqlens_q, cu_seqlens_kv, max(q_seqlen), max(kv_seqlen))
-        elif num_all_args == 3:
-            out = flash_attn.flash_attn_varlen_func(q, k, v, cu_seqlens_q, cu_seqlens_kv, max(q_seqlen), max(kv_seqlen))
-    else:
-        raise ValueError(f"Unknown attention module: {ATTN}")
+    # if ATTN == 'xformers':
+    #     if num_all_args == 1:
+    #         q, k, v = qkv.unbind(dim=1)
+    #     elif num_all_args == 2:
+    #         k, v = kv.unbind(dim=1)
+    #     q = q.unsqueeze(0)
+    #     k = k.unsqueeze(0)
+    #     v = v.unsqueeze(0)
+    #     mask = xops.fmha.BlockDiagonalMask.from_seqlens(q_seqlen, kv_seqlen)
+    #     out = xops.memory_efficient_attention(q, k, v, mask)[0]
+    # elif ATTN == 'flash_attn':
+    #     pdb.set_trace()
+    #     cu_seqlens_q = torch.cat([torch.tensor([0]), torch.cumsum(torch.tensor(q_seqlen), dim=0)]).int().to(device)
+    #     if num_all_args in [2, 3]:
+    #         cu_seqlens_kv = torch.cat([torch.tensor([0]), torch.cumsum(torch.tensor(kv_seqlen), dim=0)]).int().to(device)
+    #     if num_all_args == 1:
+    #         out = flash_attn.flash_attn_varlen_qkvpacked_func(qkv, cu_seqlens_q, max(q_seqlen))
+    #     elif num_all_args == 2:
+    #         out = flash_attn.flash_attn_varlen_kvpacked_func(q, kv, cu_seqlens_q, cu_seqlens_kv, max(q_seqlen), max(kv_seqlen))
+    #     elif num_all_args == 3:
+    #         out = flash_attn.flash_attn_varlen_func(q, k, v, cu_seqlens_q, cu_seqlens_kv, max(q_seqlen), max(kv_seqlen))
+    # else:
+    #     raise ValueError(f"Unknown attention module: {ATTN}")
+
+
+    if num_all_args == 1:
+        q, k, v = qkv.unbind(dim=1)
+    elif num_all_args == 2:
+        k, v = kv.unbind(dim=1)
+    q = q.unsqueeze(0)
+    k = k.unsqueeze(0)
+    v = v.unsqueeze(0)
+    mask = xops.fmha.BlockDiagonalMask.from_seqlens(q_seqlen, kv_seqlen)
+    out = xops.memory_efficient_attention(q, k, v, mask)[0]
     
     if s is not None:
         return s.replace(out, s.coords)

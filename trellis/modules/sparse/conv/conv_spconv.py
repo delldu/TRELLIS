@@ -43,15 +43,16 @@ class SparseConv3d(nn.Module):
         new_shape = [x.shape[0], self.conv.out_channels]
         new_layout = None if spatial_changed else x.layout
 
-        if spatial_changed and (x.shape[0] != 1):
-            pdb.set_trace()
-            # spconv was non-1 stride will break the contiguous of the output tensor, sort by the coords
-            fwd = new_data.indices[:, 0].argsort()
-            bwd = torch.zeros_like(fwd).scatter_(0, fwd, torch.arange(fwd.shape[0], device=fwd.device))
-            sorted_feats = new_data.features[fwd]
-            sorted_coords = new_data.indices[fwd]
-            unsorted_data = new_data
-            new_data = spconv.SparseConvTensor(sorted_feats, sorted_coords, unsorted_data.spatial_shape, unsorted_data.batch_size)  # type: ignore
+        # xxxx_3333
+        # if spatial_changed and (x.shape[0] != 1):
+        #     pdb.set_trace()
+        #     # spconv was non-1 stride will break the contiguous of the output tensor, sort by the coords
+        #     fwd = new_data.indices[:, 0].argsort()
+        #     bwd = torch.zeros_like(fwd).scatter_(0, fwd, torch.arange(fwd.shape[0], device=fwd.device))
+        #     sorted_feats = new_data.features[fwd]
+        #     sorted_coords = new_data.indices[fwd]
+        #     unsorted_data = new_data
+        #     new_data = spconv.SparseConvTensor(sorted_feats, sorted_coords, unsorted_data.spatial_shape, unsorted_data.batch_size)  # type: ignore
 
         out = SparseTensor(
             new_data, shape=torch.Size(new_shape), layout=new_layout,
@@ -59,10 +60,11 @@ class SparseConv3d(nn.Module):
             spatial_cache=x._spatial_cache,
         )
 
-        if spatial_changed and (x.shape[0] != 1):
-            pdb.set_trace()
-            out.register_spatial_cache(f'conv_{self.stride}_unsorted_data', unsorted_data)
-            out.register_spatial_cache(f'conv_{self.stride}_sort_bwd', bwd)
+        # xxxx_3333
+        # if spatial_changed and (x.shape[0] != 1):
+        #     pdb.set_trace()
+        #     out.register_spatial_cache(f'conv_{self.stride}_unsorted_data', unsorted_data)
+        #     out.register_spatial_cache(f'conv_{self.stride}_sort_bwd', bwd)
  
         return out
 
