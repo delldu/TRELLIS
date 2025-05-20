@@ -10,7 +10,7 @@ __all__ = [
 
 class SparseLinear(nn.Linear):
     def __init__(self, in_features, out_features, bias=True):
-        super(SparseLinear, self).__init__(in_features, out_features, bias)
+        super().__init__(in_features, out_features, bias)
 
     def forward(self, input: SparseTensor) -> SparseTensor:
         # pdb.set_trace()

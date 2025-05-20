@@ -34,25 +34,3 @@ def __getattr__(name):
     return globals()[name]
 
 
-# For Pylance
-if __name__ == '__main__':
-    from .sparse_structure import SparseStructure
-    
-    from .sparse_feat2render import SparseFeat2Render
-    from .structured_latent2render import (
-        SLat2Render,
-        Slat2RenderGeo,
-    )
-    
-    from .sparse_structure_latent import (
-        SparseStructureLatent,
-        TextConditionedSparseStructureLatent,
-        ImageConditionedSparseStructureLatent,
-    )
-    
-    from .structured_latent import (
-        SLat,
-        TextConditionedSLat,
-        ImageConditionedSLat,
-    )
-    

@@ -14,13 +14,11 @@ __all__ = [
 
 class SparseGroupNorm(nn.GroupNorm):
     def __init__(self, num_groups, num_channels, eps=1e-5, affine=True):
-        super(SparseGroupNorm, self).__init__(num_groups, num_channels, eps, affine)
+        super().__init__(num_groups, num_channels, eps, affine)
 
     def forward(self, input: SparseTensor) -> SparseTensor:
         nfeats = torch.zeros_like(input.feats)
         for k in range(input.shape[0]):
-            if DEBUG:
-                assert (input.coords[input.layout[k], 0] == k).all(), f"SparseGroupNorm: batch index mismatch"
             bfeats = input.feats[input.layout[k]]
             bfeats = bfeats.permute(1, 0).reshape(1, input.shape[1], -1)
             bfeats = super().forward(bfeats)
@@ -31,7 +29,7 @@ class SparseGroupNorm(nn.GroupNorm):
 
 class SparseLayerNorm(nn.LayerNorm):
     def __init__(self, normalized_shape, eps=1e-5, elementwise_affine=True):
-        super(SparseLayerNorm, self).__init__(normalized_shape, eps, elementwise_affine)
+        super().__init__(normalized_shape, eps, elementwise_affine)
 
     def forward(self, input: SparseTensor) -> SparseTensor:
         nfeats = torch.zeros_like(input.feats)

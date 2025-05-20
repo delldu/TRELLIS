@@ -1,13 +1,13 @@
 import torch
 import torch.nn as nn
 from .. import SparseTensor
-from .. import DEBUG
+# from .. import DEBUG
 from . import SPCONV_ALGO
 import pdb
 
 class SparseConv3d(nn.Module):
     def __init__(self, in_channels, out_channels, kernel_size, stride=1, dilation=1, padding=None, bias=True, indice_key=None):
-        super(SparseConv3d, self).__init__()
+        super().__init__()
         # in_channels = 768
         # out_channels = 192
         # kernel_size = 3
@@ -27,8 +27,10 @@ class SparseConv3d(nn.Module):
         if stride == 1 and (padding is None): # True
             self.conv = spconv.SubMConv3d(in_channels, out_channels, kernel_size, dilation=dilation, bias=bias, indice_key=indice_key, algo=algo)
         else:
+            pdb.set_trace()
             self.conv = spconv.SparseConv3d(in_channels, out_channels, kernel_size, stride=stride, dilation=dilation, padding=padding, bias=bias, indice_key=indice_key, algo=algo)
-        self.stride = tuple(stride) if isinstance(stride, (list, tuple)) else (stride, stride, stride)
+        # self.stride = tuple(stride) if isinstance(stride, (list, tuple)) else (stride, stride, stride)
+        self.stride = (stride, stride, stride)
         # self.stride --- (1, 1, 1)
         self.padding = padding # None
         # self.conv -- SubMConv3d(768, 192, kernel_size=[3, 3, 3], stride=[1, 1, 1], padding=[0, 0, 0], dilation=[1, 1, 1], output_padding=[0, 0, 0], algo=ConvAlgo.Native)
@@ -58,6 +60,7 @@ class SparseConv3d(nn.Module):
         )
 
         if spatial_changed and (x.shape[0] != 1):
+            pdb.set_trace()
             out.register_spatial_cache(f'conv_{self.stride}_unsorted_data', unsorted_data)
             out.register_spatial_cache(f'conv_{self.stride}_sort_bwd', bwd)
  

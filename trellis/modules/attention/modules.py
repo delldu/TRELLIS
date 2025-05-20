@@ -111,7 +111,7 @@ class MultiHeadAttention(nn.Module):
         self.attn_mode = attn_mode
         # self.window_size = window_size
         # self.shift_window = shift_window
-        self.use_rope = use_rope
+        # self.use_rope = use_rope
         self.qk_rms_norm = qk_rms_norm
 
         if self._type == "self":
@@ -127,7 +127,7 @@ class MultiHeadAttention(nn.Module):
             
         self.to_out = nn.Linear(channels, channels)
 
-        if use_rope: # False
+        if use_rope:
             self.rope = RotaryPositionEmbedder(channels)
     
     def forward(self, x: torch.Tensor, context: Optional[torch.Tensor] = None, indices: Optional[torch.Tensor] = None) -> torch.Tensor:
@@ -144,20 +144,11 @@ class MultiHeadAttention(nn.Module):
             # == MultiHeadAttention: type=self, use_rope=False, attn_mode=full, qk_rms_norm=True
             qkv = self.to_qkv(x)
             qkv = qkv.reshape(B, L, 3, self.num_heads, -1)
-            if self.use_rope: # False
-                pdb.set_trace()
-                q, k, v = qkv.unbind(dim=2)
-                q, k = self.rope(q, k, indices)
-                qkv = torch.stack([q, k, v], dim=2)
             if self.attn_mode == "full":
-                if self.qk_rms_norm: # True
-                    q, k, v = qkv.unbind(dim=2)
-                    q = self.q_rms_norm(q)
-                    k = self.k_rms_norm(k)
-                    h = scaled_dot_product_attention(q, k, v)
-                else:
-                    pdb.set_trace()
-                    h = scaled_dot_product_attention(qkv)
+                q, k, v = qkv.unbind(dim=2)
+                q = self.q_rms_norm(q)
+                k = self.k_rms_norm(k)
+                h = scaled_dot_product_attention(q, k, v)
             elif self.attn_mode == "windowed":
                 raise NotImplementedError("Windowed attention is not yet implemented")
         else:
@@ -168,14 +159,7 @@ class MultiHeadAttention(nn.Module):
             kv = self.to_kv(context)
             q = q.reshape(B, L, self.num_heads, -1)
             kv = kv.reshape(B, Lkv, 2, self.num_heads, -1)
-            if self.qk_rms_norm: # False
-                pdb.set_trace()
-                q = self.q_rms_norm(q)
-                k, v = kv.unbind(dim=2)
-                k = self.k_rms_norm(k)
-                h = scaled_dot_product_attention(q, k, v)
-            else:
-                h = scaled_dot_product_attention(q, kv)
+            h = scaled_dot_product_attention(q, kv)
         h = h.reshape(B, L, -1)
         h = self.to_out(h)
 

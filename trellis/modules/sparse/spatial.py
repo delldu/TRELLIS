@@ -15,14 +15,16 @@ class SparseDownsample(nn.Module):
     Downsample a sparse tensor by a factor of `factor`.
     Implemented as average pooling.
     """
-    def __init__(self, factor: Union[int, Tuple[int, ...], List[int]]):
-        super(SparseDownsample, self).__init__()
+    def __init__(self, factor: int):
+        super().__init__()
         assert factor == 2
-        self.factor = tuple(factor) if isinstance(factor, (list, tuple)) else factor
+        # self.factor = tuple(factor) if isinstance(factor, (list, tuple)) else factor
+        self.factor = factor
 
     def forward(self, input: SparseTensor) -> SparseTensor:
         DIM = input.coords.shape[-1] - 1
-        factor = self.factor if isinstance(self.factor, tuple) else (self.factor,) * DIM
+        # factor = self.factor if isinstance(self.factor, tuple) else (self.factor,) * DIM
+        factor = (self.factor,) * DIM
         assert DIM == len(factor), 'Input coordinates must have the same dimension as the downsample factor.'
 
         coord = list(input.coords.unbind(dim=-1))
@@ -62,14 +64,16 @@ class SparseUpsample(nn.Module):
     Upsample a sparse tensor by a factor of `factor`.
     Implemented as nearest neighbor interpolation.
     """
-    def __init__(self, factor: Union[int, Tuple[int, int, int], List[int]]):
-        super(SparseUpsample, self).__init__()
+    def __init__(self, factor: int):
+        super().__init__()
         assert factor == 2
-        self.factor = tuple(factor) if isinstance(factor, (list, tuple)) else factor
+        # self.factor = tuple(factor) if isinstance(factor, (list, tuple)) else factor
+        self.factor = factor
 
     def forward(self, input: SparseTensor) -> SparseTensor:
         DIM = input.coords.shape[-1] - 1
-        factor = self.factor if isinstance(self.factor, tuple) else (self.factor,) * DIM
+        # factor = self.factor if isinstance(self.factor, tuple) else (self.factor,) * DIM
+        factor = (self.factor,) * DIM
         assert DIM == len(factor), 'Input coordinates must have the same dimension as the upsample factor.'
 
         new_coords = input.get_spatial_cache(f'upsample_{factor}_coords')
@@ -93,7 +97,7 @@ class SparseSubdivide(nn.Module):
     Implemented as nearest neighbor interpolation.
     """
     def __init__(self):
-        super(SparseSubdivide, self).__init__()
+        super().__init__()
 
     def forward(self, input: SparseTensor) -> SparseTensor:
         DIM = input.coords.shape[-1] - 1

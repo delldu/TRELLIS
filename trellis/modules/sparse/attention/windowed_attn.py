@@ -26,17 +26,6 @@ def calc_window_partition(
 ) -> Tuple[torch.Tensor, torch.Tensor, List[int], List[int]]:
     """
     Calculate serialization and partitioning for a set of coordinates.
-
-    Args:
-        tensor (SparseTensor): The input tensor.
-        window_size (int): The window size to use.
-        shift_window (Tuple[int, ...]): The shift of serialized coordinates.
-
-    Returns:
-        (torch.Tensor): Forwards indices.
-        (torch.Tensor): Backwards indices.
-        (List[int]): Sequence lengths.
-        (List[int]): Sequence batch indices.
     """
     # tensor.shape = torch.Size([1, 3, 12, 64]), 
 
@@ -102,20 +91,9 @@ def sparse_windowed_scaled_dot_product_self_attention(
     assert window_size == 8
     assert shift_window == 0 or shift_window == 4
 
-    # xxxx_3333
-    # serialization_spatial_cache_name = f'window_partition_{window_size}_{shift_window}'
-    # serialization_spatial_cache = qkv.get_spatial_cache(serialization_spatial_cache_name)
-    # if serialization_spatial_cache is None:
-    #     fwd_indices, bwd_indices, seq_lens, seq_batch_indices = calc_window_partition(qkv, window_size, shift_window)
-    #     qkv.register_spatial_cache(serialization_spatial_cache_name, (fwd_indices, bwd_indices, seq_lens, seq_batch_indices))
-    # else:
-    #     # print(f" ................. {serialization_spatial_cache_name} sparse_windowed_scaled_dot_product_self_attention cache OK .................")
-    #     # serialization_spatial_cache_name == window_partition_8_0 or window_partition_8_4
-    #     fwd_indices, bwd_indices, seq_lens, seq_batch_indices = serialization_spatial_cache
-    # fwd_indices, bwd_indices, seq_lens, seq_batch_indices = calc_window_partition(qkv, window_size, shift_window)
     fwd_indices, bwd_indices, seq_lens = calc_window_partition(qkv, window_size, shift_window)
 
-    M = fwd_indices.shape[0] #  tensor [fwd_indices] size: [14955], min: 0.0, max: 14954.0, mean: 7476.999023
+    # M = fwd_indices.shape[0] #  tensor [fwd_indices] size: [14955], min: 0.0, max: 14954.0, mean: 7476.999023
     T = qkv.feats.shape[0]
     H = qkv.feats.shape[2]
     C = qkv.feats.shape[3]
@@ -135,36 +113,13 @@ def sparse_windowed_scaled_dot_product_self_attention(
     #     210, 386, 141, 36, 8, 17, 57, 136, 217, 52, 2]
 
 
-    if all([seq_len == window_size for seq_len in seq_lens]):
-        pdb.set_trace()
-        B = len(seq_lens)
-        N = window_size
-        qkv_feats = qkv_feats.reshape(B, N, 3, H, C)
-        if ATTN == 'xformers':
-            q, k, v = qkv_feats.unbind(dim=2)                       # [B, N, H, C]
-            out = xops.memory_efficient_attention(q, k, v)          # [B, N, H, C]
-        elif ATTN == 'flash_attn':
-            pdb.set_trace()
-            out = flash_attn.flash_attn_qkvpacked_func(qkv_feats)   # [B, N, H, C]
-        else:
-            raise ValueError(f"Unknown attention module: {ATTN}")
-        out = out.reshape(B * N, H, C)                              # [M, H, C]
-    else:
-        # ==> pdb.set_trace()
-
-        if ATTN == 'xformers':
-            # tensor [qkv_feats] size: [14955, 3, 12, 64], min: -18.796875, max: 18.203125, mean: -0.034009
-            q, k, v = qkv_feats.unbind(dim=1)                       # [M, H, C]
-            q = q.unsqueeze(0)                                      # [1, M, H, C]
-            k = k.unsqueeze(0)                                      # [1, M, H, C]
-            v = v.unsqueeze(0)                                      # [1, M, H, C]
-            mask = xops.fmha.BlockDiagonalMask.from_seqlens(seq_lens)
-            out = xops.memory_efficient_attention(q, k, v, mask)[0] # [M, H, C]
-        elif ATTN == 'flash_attn':
-            pdb.set_trace()
-            cu_seqlens = torch.cat([torch.tensor([0]), torch.cumsum(torch.tensor(seq_lens), dim=0)], dim=0) \
-                        .to(qkv.device).int()
-            out = flash_attn.flash_attn_varlen_qkvpacked_func(qkv_feats, cu_seqlens, max(seq_lens)) # [M, H, C]
+    # tensor [qkv_feats] size: [14955, 3, 12, 64], min: -18.796875, max: 18.203125, mean: -0.034009
+    q, k, v = qkv_feats.unbind(dim=1)                       # [M, H, C]
+    q = q.unsqueeze(0)                                      # [1, M, H, C]
+    k = k.unsqueeze(0)                                      # [1, M, H, C]
+    v = v.unsqueeze(0)                                      # [1, M, H, C]
+    mask = xops.fmha.BlockDiagonalMask.from_seqlens(seq_lens)
+    out = xops.memory_efficient_attention(q, k, v, mask)[0] # [M, H, C]
 
     # tensor [out] size: [14955, 12, 64], min: -16.890625, max: 8.914062, mean: -0.022558
     out = out[bwd_indices]      # [T, H, C]

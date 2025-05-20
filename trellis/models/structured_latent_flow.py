@@ -3,7 +3,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
-# from ..modules.utils import zero_module, convert_module_to_f16, convert_module_to_f32
 from ..modules.utils import convert_module_to_f16, convert_module_to_f32
 from ..modules.transformer import AbsolutePositionEmbedder
 from ..modules.norm import LayerNorm32
@@ -43,6 +42,8 @@ class SparseResBlock3d(nn.Module):
         self.skip_connection = sp.SparseLinear(channels, self.out_channels) \
             if channels != self.out_channels else nn.Identity()
         self.updown = None
+
+        # xxxx_3333
         if self.downsample:
             self.updown = sp.SparseDownsample(2)
         elif self.upsample:
@@ -112,7 +113,6 @@ class SLatFlowModel(nn.Module):
         qk_rms_norm_cross: bool = False,
     ):
         super().__init__()
-        # print(f"SLatFlowModel: num_head_channels={num_head_channels}, use_skip_connection={use_skip_connection}, share_mod={share_mod}, qk_rms_norm_cross={qk_rms_norm_cross}")
         # SLatFlowModel: num_head_channels=64, use_skip_connection=True, share_mod=False, qk_rms_norm_cross=False
 
         assert resolution == 64
