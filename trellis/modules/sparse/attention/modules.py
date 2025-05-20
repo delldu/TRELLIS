@@ -95,6 +95,7 @@ class SparseMultiHeadAttention(nn.Module):
     def _linear(module: nn.Linear, x: Union[SparseTensor, torch.Tensor]) -> Union[SparseTensor, torch.Tensor]:
         # assert isinstance(x, SparseTensor) == True or ...
         if isinstance(x, SparseTensor):
+            pdb.set_trace()
             return x.replace(module(x.feats), x.coords)
         else:
             # ==> pdb.set_trace()
@@ -112,6 +113,7 @@ class SparseMultiHeadAttention(nn.Module):
         # assert isinstance(x, SparseTensor) == True or ...
 
         if isinstance(x, SparseTensor):
+            pdb.set_trace()
             x_feats = x.feats.unsqueeze(0)
         else:
             # ==> pdb.set_trace()
