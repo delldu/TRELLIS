@@ -176,23 +176,23 @@ class SparseTensor:
     def type(self, dtype):
         # ==> pdb.set_trace()
         new_feats = self.feats.type(dtype)
-        return self.replace(new_feats)
+        return self.replace(new_feats, self.coords)
 
     def float(self) -> 'SparseTensor':
         # ==> pdb.set_trace()
         new_feats = self.feats.float()
-        return self.replace(new_feats)
+        return self.replace(new_feats, self.coords)
     
     def reshape(self, *shape) -> 'SparseTensor':
         # ==> pdb.set_trace()
         new_feats = self.feats.reshape(self.feats.shape[0], *shape)
-        return self.replace(new_feats)
+        return self.replace(new_feats, self.coords)
     
     def unbind(self, dim: int) -> List['SparseTensor']:
         # return sparse_unbind(self, dim)
         assert dim == 1
         feats = self.feats.unbind(dim)
-        return [self.replace(f) for f in feats]
+        return [self.replace(f, self.coords) for f in feats]
 
     def replace(self, feats: torch.Tensor, coords: Optional[torch.Tensor] = None) -> 'SparseTensor':
         new_shape = [self.shape[0]]
@@ -260,7 +260,7 @@ class SparseTensor:
             # ==> pdb.set_trace()
             other = other.feats
         new_feats = op(self.feats, other)
-        new_tensor = self.replace(new_feats)
+        new_tensor = self.replace(new_feats, self.coords)
 
         return new_tensor
 

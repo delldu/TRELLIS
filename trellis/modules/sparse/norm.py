@@ -24,7 +24,7 @@ class SparseGroupNorm(nn.GroupNorm):
             bfeats = super().forward(bfeats)
             bfeats = bfeats.reshape(input.shape[1], -1).permute(1, 0)
             nfeats[input.layout[k]] = bfeats
-        return input.replace(nfeats)
+        return input.replace(nfeats, input.coords)
 
 
 class SparseLayerNorm(nn.LayerNorm):
@@ -39,7 +39,7 @@ class SparseLayerNorm(nn.LayerNorm):
             bfeats = super().forward(bfeats)
             bfeats = bfeats.reshape(input.shape[1], -1).permute(1, 0)
             nfeats[input.layout[k]] = bfeats
-        return input.replace(nfeats)
+        return input.replace(nfeats, input.coords)
 
 
 class SparseGroupNorm32(SparseGroupNorm):

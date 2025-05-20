@@ -143,10 +143,10 @@ class ModulatedSparseTransformerCrossBlock(nn.Module):
         h = self.self_attn(h)
         h = h * gate_msa
         x = x + h
-        h = x.replace(self.norm2.float()(x.feats))
+        h = x.replace(self.norm2.float()(x.feats), x.coords)
         h = self.cross_attn(h, context)
         x = x + h
-        h = x.replace(self.norm3.float()(x.feats))
+        h = x.replace(self.norm3.float()(x.feats), x.coords)
         h = h * (1 + scale_mlp) + shift_mlp
         h = self.mlp(h)
         h = h * gate_mlp

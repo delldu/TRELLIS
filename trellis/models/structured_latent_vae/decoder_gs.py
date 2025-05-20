@@ -176,7 +176,7 @@ class SLatGaussianDecoder(SparseTransformerBase):
 
         h2 = super().forward(x)
         h2 = h2.type(x.dtype)
-        h2 = h2.replace(F.layer_norm(h2.feats, h2.feats.shape[-1:]))
+        h2 = h2.replace(F.layer_norm(h2.feats, h2.feats.shape[-1:]), h2.coords)
         h2 = self.out_layer.float()(h2)
         h2 = self.to_representation(h2)
 

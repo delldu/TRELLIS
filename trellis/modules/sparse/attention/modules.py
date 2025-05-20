@@ -19,7 +19,7 @@ class SparseMultiHeadRMSNorm(nn.Module):
         x_type = x.dtype
         x = x.float()
         if isinstance(x, SparseTensor):
-            x = x.replace(F.normalize(x.feats, dim=-1))
+            x = x.replace(F.normalize(x.feats, dim=-1), x.coords)
         else:
             x = F.normalize(x, dim=-1)            
         return (x * self.gamma * self.scale).to(x_type)

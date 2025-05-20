@@ -105,7 +105,7 @@ class SLatRadianceFieldDecoder(SparseTransformerBase):
     def forward(self, x: sp.SparseTensor) -> List[Strivec]:
         h = super().forward(x)
         h = h.type(x.dtype)
-        h = h.replace(F.layer_norm(h.feats, h.feats.shape[-1:]))
+        h = h.replace(F.layer_norm(h.feats, h.coords, h.feats.shape[-1:]))
         h = self.out_layer(h)
         return self.to_representation(h)
 
