@@ -7,7 +7,6 @@ __all__ = [
     'SparseGELU',
 ]
 
-
 class SparseSiLU(nn.SiLU):
     def forward(self, input: SparseTensor) -> SparseTensor:
         return input.replace(super().forward(input.feats), input.coords)

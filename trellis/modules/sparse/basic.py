@@ -2,8 +2,6 @@ from typing import *
 import torch
 import torch.nn as nn
 from spconv.pytorch import SparseConvTensor
-
-
 import todos
 import pdb
 

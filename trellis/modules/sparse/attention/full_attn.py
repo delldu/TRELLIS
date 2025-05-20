@@ -2,6 +2,8 @@ from typing import *
 import torch
 from .. import SparseTensor
 from .. import DEBUG, ATTN
+import todos
+import pdb
 
 if ATTN == 'xformers':
     import xformers.ops as xops
@@ -16,77 +18,6 @@ __all__ = [
 ]
 
 
-# @overload
-# def sparse_scaled_dot_product_attention(qkv: SparseTensor) -> SparseTensor:
-#     """
-#     Apply scaled dot product attention to a sparse tensor.
-
-#     Args:
-#         qkv (SparseTensor): A [N, *, 3, H, C] sparse tensor containing Qs, Ks, and Vs.
-#     """
-#     ...
-
-# @overload
-# def sparse_scaled_dot_product_attention(q: SparseTensor, kv: Union[SparseTensor, torch.Tensor]) -> SparseTensor:
-#     """
-#     Apply scaled dot product attention to a sparse tensor.
-
-#     Args:
-#         q (SparseTensor): A [N, *, H, C] sparse tensor containing Qs.
-#         kv (SparseTensor or torch.Tensor): A [N, *, 2, H, C] sparse tensor or a [N, L, 2, H, C] dense tensor containing Ks and Vs.
-#     """
-#     ...
-
-# @overload
-# def sparse_scaled_dot_product_attention(q: torch.Tensor, kv: SparseTensor) -> torch.Tensor:
-#     """
-#     Apply scaled dot product attention to a sparse tensor.
-
-#     Args:
-#         q (SparseTensor): A [N, L, H, C] dense tensor containing Qs.
-#         kv (SparseTensor or torch.Tensor): A [N, *, 2, H, C] sparse tensor containing Ks and Vs.
-#     """
-#     ...
-
-# @overload
-# def sparse_scaled_dot_product_attention(q: SparseTensor, k: SparseTensor, v: SparseTensor) -> SparseTensor:
-#     """
-#     Apply scaled dot product attention to a sparse tensor.
-
-#     Args:
-#         q (SparseTensor): A [N, *, H, Ci] sparse tensor containing Qs.
-#         k (SparseTensor): A [N, *, H, Ci] sparse tensor containing Ks.
-#         v (SparseTensor): A [N, *, H, Co] sparse tensor containing Vs.
-
-#     Note:
-#         k and v are assumed to have the same coordinate map.
-#     """
-#     ...
-
-# @overload
-# def sparse_scaled_dot_product_attention(q: SparseTensor, k: torch.Tensor, v: torch.Tensor) -> SparseTensor:
-#     """
-#     Apply scaled dot product attention to a sparse tensor.
-
-#     Args:
-#         q (SparseTensor): A [N, *, H, Ci] sparse tensor containing Qs.
-#         k (torch.Tensor): A [N, L, H, Ci] dense tensor containing Ks.
-#         v (torch.Tensor): A [N, L, H, Co] dense tensor containing Vs.
-#     """
-#     ...
-
-# @overload
-# def sparse_scaled_dot_product_attention(q: torch.Tensor, k: SparseTensor, v: SparseTensor) -> torch.Tensor:
-#     """
-#     Apply scaled dot product attention to a sparse tensor.
-
-#     Args:
-#         q (torch.Tensor): A [N, L, H, Ci] dense tensor containing Qs.
-#         k (SparseTensor): A [N, *, H, Ci] sparse tensor containing Ks.
-#         v (SparseTensor): A [N, *, H, Co] sparse tensor containing Vs.
-#     """
-#     ...
-
 def sparse_scaled_dot_product_attention(*args, **kwargs):
     arg_names_dict = {
         1: ['qkv'],
@@ -99,6 +30,7 @@ def sparse_scaled_dot_product_attention(*args, **kwargs):
         assert key in kwargs, f"Missing argument {key}"
 
     if num_all_args == 1:
+        # ==> pdb.set_trace()
         qkv = args[0] if len(args) > 0 else kwargs['qkv']
         assert isinstance(qkv, SparseTensor), f"qkv must be a SparseTensor, got {type(qkv)}"
         assert len(qkv.shape) == 4 and qkv.shape[1] == 3, f"Invalid shape for qkv, got {qkv.shape}, expected [N, *, 3, H, C]"
@@ -124,6 +56,7 @@ def sparse_scaled_dot_product_attention(*args, **kwargs):
             q_seqlen = [q.layout[i].stop - q.layout[i].start for i in range(q.shape[0])]
             q = q.feats     # [T_Q, H, C]
         else:
+            pdb.set_trace()
             assert len(q.shape) == 4, f"Invalid shape for q, got {q.shape}, expected [N, L, H, C]"
             s = None
             N, L, H, C = q.shape
@@ -135,6 +68,7 @@ def sparse_scaled_dot_product_attention(*args, **kwargs):
             kv_seqlen = [kv.layout[i].stop - kv.layout[i].start for i in range(kv.shape[0])]
             kv = kv.feats     # [T_KV, 2, H, C]
         else:
+            # ==> pdb.set_trace()
             assert len(kv.shape) == 5, f"Invalid shape for kv, got {kv.shape}, expected [N, L, 2, H, C]"
             N, L, _, H, C = kv.shape
             kv_seqlen = [L] * N
@@ -156,6 +90,7 @@ def sparse_scaled_dot_product_attention(*args, **kwargs):
             q_seqlen = [q.layout[i].stop - q.layout[i].start for i in range(q.shape[0])]
             q = q.feats     # [T_Q, H, Ci]
         else:
+            pdb.set_trace()
             assert len(q.shape) == 4, f"Invalid shape for q, got {q.shape}, expected [N, L, H, Ci]"
             s = None
             N, L, H, CI = q.shape
@@ -169,6 +104,7 @@ def sparse_scaled_dot_product_attention(*args, **kwargs):
             k = k.feats     # [T_KV, H, Ci]
             v = v.feats     # [T_KV, H, Co]
         else:
+            pdb.set_trace()
             assert len(k.shape) == 4, f"Invalid shape for k, got {k.shape}, expected [N, L, H, Ci]"
             assert len(v.shape) == 4, f"Invalid shape for v, got {v.shape}, expected [N, L, H, Co]"
             N, L, H, CI, CO = *k.shape, v.shape[-1]
@@ -176,15 +112,15 @@ def sparse_scaled_dot_product_attention(*args, **kwargs):
             k = k.reshape(N * L, H, CI)     # [T_KV, H, Ci]
             v = v.reshape(N * L, H, CO)     # [T_KV, H, Co]
 
-    if DEBUG:
-        if s is not None:
-            for i in range(s.shape[0]):
-                assert (s.coords[s.layout[i]] == i).all(), f"SparseScaledDotProductSelfAttention: batch index mismatch"
-        if num_all_args in [2, 3]:
-            assert q.shape[:2] == [1, sum(q_seqlen)], f"SparseScaledDotProductSelfAttention: q shape mismatch"
-        if num_all_args == 3:
-            assert k.shape[:2] == [1, sum(kv_seqlen)], f"SparseScaledDotProductSelfAttention: k shape mismatch"
-            assert v.shape[:2] == [1, sum(kv_seqlen)], f"SparseScaledDotProductSelfAttention: v shape mismatch"
+    # if DEBUG:
+    #     if s is not None:
+    #         for i in range(s.shape[0]):
+    #             assert (s.coords[s.layout[i]] == i).all(), f"SparseScaledDotProductSelfAttention: batch index mismatch"
+    #     if num_all_args in [2, 3]:
+    #         assert q.shape[:2] == [1, sum(q_seqlen)], f"SparseScaledDotProductSelfAttention: q shape mismatch"
+    #     if num_all_args == 3:
+    #         assert k.shape[:2] == [1, sum(kv_seqlen)], f"SparseScaledDotProductSelfAttention: k shape mismatch"
+    #         assert v.shape[:2] == [1, sum(kv_seqlen)], f"SparseScaledDotProductSelfAttention: v shape mismatch"
 
     if ATTN == 'xformers':
         if num_all_args == 1:
@@ -197,6 +133,7 @@ def sparse_scaled_dot_product_attention(*args, **kwargs):
         mask = xops.fmha.BlockDiagonalMask.from_seqlens(q_seqlen, kv_seqlen)
         out = xops.memory_efficient_attention(q, k, v, mask)[0]
     elif ATTN == 'flash_attn':
+        pdb.set_trace()
         cu_seqlens_q = torch.cat([torch.tensor([0]), torch.cumsum(torch.tensor(q_seqlen), dim=0)]).int().to(device)
         if num_all_args in [2, 3]:
             cu_seqlens_kv = torch.cat([torch.tensor([0]), torch.cumsum(torch.tensor(kv_seqlen), dim=0)]).int().to(device)
@@ -210,6 +147,6 @@ def sparse_scaled_dot_product_attention(*args, **kwargs):
         raise ValueError(f"Unknown attention module: {ATTN}")
     
     if s is not None:
-        return s.replace(out)
+        return s.replace(out, s.coords)
     else:
         return out.reshape(N, L, H, -1)
