@@ -14,11 +14,7 @@ class SparseTensor:
     def __init__(self, *args, **kwargs):
         # args = ()
         # kwargs = {}
-        # Lazy import of sparse tensor backend
-        # print(f"SparseTensor: args={args}, kwargs={kwargs.keys()} ...")
         method_id = 0
-        # print(f"SparseTensor: args={args}, kwargs={kwargs.keys()}")
-        # SparseTensor: args=(SparseConvTensor[shape=torch.Size([3185, 1024])],), kwargs=dict_keys(['shape', 'layout', 'scale', 'spatial_cache'])
 
         if len(args) != 0:
             method_id = 0 if isinstance(args[0], torch.Tensor) else 1
@@ -27,13 +23,19 @@ class SparseTensor:
             method_id = 1 if 'data' in kwargs else 0
             assert method_id == 0
 
+        print(f"SparseTensor: method_id={method_id}, args={args}, kwargs={kwargs.keys()}")
+
         # assert method_id == 0 or 1
         if method_id == 0:
             feats, coords, shape, layout = args + (None,) * (4 - len(args)) # (None, None, None, None)
-            # print(f"SparseTensor: method_id==0: kwargs={kwargs.keys()}, shape={shape}, layout={layout} ...")
+            # SparseTensor: args=(tensor([[ 7.917969,  8.007812,  0.144531,  ...,  ]]), tensor([[  0,   6,  60, 104], ...,
+            #         [  0, 119,  67, 117]], dtype=torch.int32), torch.Size([1, 768])), kwargs=dict_keys([])
+            # ----------------------------------------------------------------------------------------------
             # SparseTensor: args=(), kwargs=dict_keys(['feats', 'coords'])
+            # ----------------------------------------------------------------------------------------------
 
             if 'feats' in kwargs: # True | False
+                # ==> pdb.set_trace()
                 feats = kwargs['feats']
                 del kwargs['feats']
             if 'coords' in kwargs: # True | False
@@ -42,31 +44,28 @@ class SparseTensor:
 
             if shape is None: # False | True
                 shape = self.__cal_shape(feats, coords)
-            if layout is None: # True
+            else:
+                pass #pdb.set_trace()
+            if layout is None: # True | False
                 layout = self.__cal_layout(coords, shape[0])
+            else:
+                pass #pdb.set_trace()
 
             spatial_shape = list(coords.max(0)[0] + 1)[1:]
             # spatial_shape -- [tensor(60, device='cuda:0', dtype=torch.int32), 
             #     tensor(46, device='cuda:0', dtype=torch.int32), 
             #     tensor(64, device='cuda:0', dtype=torch.int32)]
             # self.data = SparseTensorData(feats.reshape(feats.shape[0], -1), coords, spatial_shape, shape[0], **kwargs)
-            self.data = SparseConvTensor(feats.reshape(feats.shape[0], -1), coords, spatial_shape, shape[0], **kwargs)
-            self.data._features = feats
+
+            # self.data = SparseConvTensor(feats.reshape(feats.shape[0], -1), coords, spatial_shape, shape[0], **kwargs)
+            # self.data._features = feats
+            self.data = SparseConvTensor(feats, coords, spatial_shape, shape[0]) #  shape[0] -- batch_size
+
         elif method_id == 1: # SparseConvTensor
-            data, shape, layout = args + (None,) * (3 - len(args))
-            # print(f"SparseTensor: method_id == 1: kwargs={kwargs.keys()}, shape={shape}, layout={layout} ...")
-            # SparseTensor: method_id == 1: kwargs=dict_keys(['shape', 'layout', 'scale', 'spatial_cache']), shape=None, layout=None ...
-            # if 'data' in kwargs: # False
-            #     pdb.set_trace()
-            #     data = kwargs['data']
-            #     del kwargs['data']
-
-            # print(f"SparseTensor: args={args}, kwargs={kwargs.keys()}")
-            # print(f"    data={data}, shape={shape}, layout={layout}")
-            # SparseTensor: args=(SparseConvTensor[shape=torch.Size([957120, 96])],), 
+            # SparseTensor: args=(SparseConvTensor[shape=torch.Size([119640, 768])],), 
             #     kwargs=dict_keys(['shape', 'layout', 'scale', 'spatial_cache'])
-            #     data=SparseConvTensor[shape=torch.Size([957120, 96])], shape=None, layout=None
-
+            # ----------------------------------------------------------------------------------------------
+            data, shape, layout = args + (None,) * (3 - len(args))
 
             if 'shape' in kwargs: # True
                 shape = kwargs['shape']

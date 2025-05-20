@@ -83,8 +83,7 @@ class SparseMultiHeadAttention(nn.Module):
             self.k_rms_norm = SparseMultiHeadRMSNorm(channels // num_heads, num_heads)
             
         self.to_out = nn.Linear(channels, channels)
-
-        
+       
     @staticmethod
     def _linear(module: nn.Linear, x: Union[SparseTensor, torch.Tensor]) -> Union[SparseTensor, torch.Tensor]:
         # assert isinstance(x, SparseTensor) == True or ...
@@ -95,6 +94,7 @@ class SparseMultiHeadAttention(nn.Module):
 
     @staticmethod
     def _reshape_chs(x: Union[SparseTensor, torch.Tensor], shape: Tuple[int, ...]) -> Union[SparseTensor, torch.Tensor]:
+        assert isinstance(x, SparseTensor) == True
         return x.reshape(*shape)
 
     def _fused_pre(self, x: Union[SparseTensor, torch.Tensor], num_fused: int) -> Union[SparseTensor, torch.Tensor]:
@@ -114,7 +114,6 @@ class SparseMultiHeadAttention(nn.Module):
             # == SparseMultiHeadAttention: type=self, attn_mode=full, use_rope=False, qk_rms_norm=True, qkv_bias=True
             qkv = self._linear(self.to_qkv, x)
             qkv = self._fused_pre(qkv, num_fused=3)
-
             if self.qk_rms_norm: # False | True
                 q, k, v = qkv.unbind(dim=1)
                 q = self.q_rms_norm(q)

@@ -37,22 +37,6 @@ class MeshExtractResult:
         face_normals = torch.nn.functional.normalize(face_normals, dim=1)
         return face_normals[:, None, :].repeat(1, 3, 1)
                 
-    # def comput_v_normals(self, verts, faces):
-    #     i0 = faces[..., 0].long()
-    #     i1 = faces[..., 1].long()
-    #     i2 = faces[..., 2].long()
-
-    #     v0 = verts[i0, :]
-    #     v1 = verts[i1, :]
-    #     v2 = verts[i2, :]
-    #     face_normals = torch.cross(v1 - v0, v2 - v0, dim=-1)
-    #     v_normals = torch.zeros_like(verts)
-    #     v_normals.scatter_add_(0, i0[..., None].repeat(1, 3), face_normals)
-    #     v_normals.scatter_add_(0, i1[..., None].repeat(1, 3), face_normals)
-    #     v_normals.scatter_add_(0, i2[..., None].repeat(1, 3), face_normals)
-
-    #     v_normals = torch.nn.functional.normalize(v_normals, dim=1)
-    #     return v_normals   
 
 class SparseFeatures2Mesh:
     def __init__(self, device="cuda", res=64, use_color=True):
@@ -139,11 +123,7 @@ class SparseFeatures2Mesh:
         weights_d = get_dense_attrs(coords, weights, res=self.res, sdf_init=False)
         # tensor [weights_d] size: [16777216, 21], min: -11.96298, max: 16.188641, mean: 0.000615
 
-        if self.use_color: # True
-            sdf_d, deform_d, colors_d = v_attrs_d[..., 0], v_attrs_d[..., 1:4], v_attrs_d[..., 4:]
-        else:
-            sdf_d, deform_d = v_attrs_d[..., 0], v_attrs_d[..., 1:4]
-            colors_d = None
+        sdf_d, deform_d, colors_d = v_attrs_d[..., 0], v_attrs_d[..., 1:4], v_attrs_d[..., 4:]
 
         x_nx3 = get_defomed_verts(self.reg_v, deform_d, self.res)
         # tensor [x_nx3] size: [16974593, 3], min: -0.500935, max: 0.50072, mean: -2e-06
@@ -162,11 +142,5 @@ class SparseFeatures2Mesh:
         
         # ===> pdb.set_trace()
         mesh = MeshExtractResult(vertices=vertices, faces=faces, vertex_attrs=colors, res=self.res)
-        if training: # False
-            if mesh.success:
-                reg_loss += L_dev.mean() * 0.5
-            reg_loss += (weights[:,:20]).abs().mean() * 0.2
-            mesh.reg_loss = reg_loss
-            mesh.tsdf_v = get_defomed_verts(v_pos, v_attrs[:, 1:4], self.res)
-            mesh.tsdf_s = v_attrs[:, 0]
+
         return mesh

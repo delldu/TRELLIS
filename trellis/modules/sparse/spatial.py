@@ -52,6 +52,7 @@ class SparseDownsample(nn.Module):
         out._scale = tuple([s // f for s, f in zip(input._scale, factor)])
         out._spatial_cache = input._spatial_cache
 
+        # xxxx_3333
         out.register_spatial_cache(f'upsample_{factor}_coords', input.coords)
         out.register_spatial_cache(f'upsample_{factor}_layout', input.layout)
         out.register_spatial_cache(f'upsample_{factor}_idx', idx)

@@ -1,47 +1,29 @@
 import torch
 import torch.nn as nn
 from .. import SparseTensor
-from . import SPCONV_ALGO
+import spconv.pytorch as spconv
+
 import pdb
 
 class SparseConv3d(nn.Module):
-    def __init__(self, in_channels, out_channels, kernel_size, stride=1, dilation=1, padding=None, bias=True, indice_key=None):
+    def __init__(self, in_channels, out_channels, kernel_size, stride=1, dilation=1, bias=True, indice_key=None):
         super().__init__()
         # in_channels = 768
         # out_channels = 192
-        # kernel_size = 3
-        # stride = 1
-        # dilation = 1
-        # padding = None
-        # bias = True
+        # kernel_size = 3 or 1
+        assert stride == 1
+        assert dilation == 1
+        assert bias == True
         # indice_key = 'res_128'
-        if 'spconv' not in globals(): # True
-            import spconv.pytorch as spconv
-        algo = None
-        # assert SPCONV_ALGO == 'native'
-        if SPCONV_ALGO == 'native': # True
-            algo = spconv.ConvAlgo.Native
-        elif SPCONV_ALGO == 'implicit_gemm':
-            algo = spconv.ConvAlgo.MaskImplicitGemm
-        if stride == 1 and (padding is None): # True
-            self.conv = spconv.SubMConv3d(in_channels, out_channels, kernel_size, dilation=dilation, bias=bias, indice_key=indice_key, algo=algo)
-        else:
-            pdb.set_trace()
-            self.conv = spconv.SparseConv3d(in_channels, out_channels, kernel_size, stride=stride, dilation=dilation, padding=padding, bias=bias, indice_key=indice_key, algo=algo)
-        # self.stride = tuple(stride) if isinstance(stride, (list, tuple)) else (stride, stride, stride)
+        self.conv = spconv.SubMConv3d(in_channels, out_channels, kernel_size, dilation=dilation, bias=bias, 
+            indice_key=indice_key, algo=spconv.ConvAlgo.Native)
         self.stride = (stride, stride, stride)
-        # self.stride --- (1, 1, 1)
-        self.padding = padding # None
-        # self.conv -- SubMConv3d(768, 192, kernel_size=[3, 3, 3], stride=[1, 1, 1], padding=[0, 0, 0], dilation=[1, 1, 1], output_padding=[0, 0, 0], algo=ConvAlgo.Native)
-        # assert self.padding == None
         
     def forward(self, x: SparseTensor) -> SparseTensor:
-        spatial_changed = any(s != 1 for s in self.stride) or (self.padding is not None)
         new_data = self.conv(x.data)
 
         new_shape = [x.shape[0], self.conv.out_channels]
-        assert spatial_changed == False
-        new_layout = None if spatial_changed else x.layout
+        new_layout = x.layout
 
         out = SparseTensor(
             new_data, shape=torch.Size(new_shape), layout=new_layout,
