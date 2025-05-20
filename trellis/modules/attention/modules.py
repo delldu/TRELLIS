@@ -15,52 +15,6 @@ class MultiHeadRMSNorm(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return (F.normalize(x.float(), dim = -1) * self.gamma * self.scale).to(x.dtype)
 
-# xxxx_3333
-# class RotaryPositionEmbedder(nn.Module):
-#     def __init__(self, hidden_size: int, in_channels: int = 3):
-#         super().__init__()
-#         assert hidden_size % 2 == 0, "Hidden size must be divisible by 2"
-#         self.hidden_size = hidden_size
-#         self.in_channels = in_channels
-#         self.freq_dim = hidden_size // in_channels // 2
-#         self.freqs = torch.arange(self.freq_dim, dtype=torch.float32) / self.freq_dim
-#         self.freqs = 1.0 / (10000 ** self.freqs)
-        
-#     def _get_phases(self, indices: torch.Tensor) -> torch.Tensor:
-#         self.freqs = self.freqs.to(indices.device)
-#         phases = torch.outer(indices, self.freqs)
-#         phases = torch.polar(torch.ones_like(phases), phases)
-#         return phases
-        
-#     def _rotary_embedding(self, x: torch.Tensor, phases: torch.Tensor) -> torch.Tensor:
-#         x_complex = torch.view_as_complex(x.float().reshape(*x.shape[:-1], -1, 2))
-#         x_rotated = x_complex * phases
-#         x_embed = torch.view_as_real(x_rotated).reshape(*x_rotated.shape[:-1], -1).to(x.dtype)
-#         return x_embed
-        
-#     def forward(self, q: torch.Tensor, k: torch.Tensor, indices: Optional[torch.Tensor] = None) -> Tuple[torch.Tensor, torch.Tensor]:
-#         """
-#         Args:
-#             q (sp.SparseTensor): [..., N, D] tensor of queries
-#             k (sp.SparseTensor): [..., N, D] tensor of keys
-#             indices (torch.Tensor): [..., N, C] tensor of spatial positions
-#         """
-#         if indices is None:
-#             indices = torch.arange(q.shape[-2], device=q.device)
-#             if len(q.shape) > 2:
-#                 indices = indices.unsqueeze(0).expand(q.shape[:-2] + (-1,))
-        
-#         phases = self._get_phases(indices.reshape(-1)).reshape(*indices.shape[:-1], -1)
-#         if phases.shape[1] < self.hidden_size // 2:
-#             phases = torch.cat([phases, torch.polar(
-#                 torch.ones(*phases.shape[:-1], self.hidden_size // 2 - phases.shape[1], device=phases.device),
-#                 torch.zeros(*phases.shape[:-1], self.hidden_size // 2 - phases.shape[1], device=phases.device)
-#             )], dim=-1)
-#         q_embed = self._rotary_embedding(q, phases)
-#         k_embed = self._rotary_embedding(k, phases)
-#         return q_embed, k_embed
-    
-
 class MultiHeadAttention(nn.Module):
     def __init__(
         self,

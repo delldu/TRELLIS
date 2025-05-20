@@ -2,21 +2,7 @@ from typing import *
 import torch
 import math
 import xformers.ops as xops
-
-# from . import DEBUG, BACKEND
 import pdb
-
-# xxxx_3333
-# if BACKEND == 'xformers': # True
-#     import xformers.ops as xops
-# elif BACKEND == 'flash_attn':
-#     import flash_attn
-# elif BACKEND == 'sdpa':
-#     from torch.nn.functional import scaled_dot_product_attention as sdpa
-# elif BACKEND == 'naive':
-#     pass
-# else:
-#     raise ValueError(f"Unknown attention backend: {BACKEND}")
 
 __all__ = [
     'scaled_dot_product_attention',

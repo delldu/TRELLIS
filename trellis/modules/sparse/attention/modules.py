@@ -6,7 +6,6 @@ from .. import SparseTensor
 from .full_attn import sparse_scaled_dot_product_attention
 from .serialized_attn import SerializeMode #, sparse_serialized_scaled_dot_product_self_attention
 from .windowed_attn import sparse_windowed_scaled_dot_product_self_attention
-# from ...attention import RotaryPositionEmbedder
 import pdb
 
 class SparseMultiHeadRMSNorm(nn.Module):
@@ -18,13 +17,7 @@ class SparseMultiHeadRMSNorm(nn.Module):
     def forward(self, x: Union[SparseTensor, torch.Tensor]) -> Union[SparseTensor, torch.Tensor]:
         x_type = x.dtype
         x = x.float()
-
-        # xxxx_3333
-        # if isinstance(x, SparseTensor):
-        #     x = x.replace(F.normalize(x.feats, dim=-1), x.coords)
-        # else:
-        #     pdb.set_trace()
-        #     x = F.normalize(x, dim=-1)
+        assert isinstance(x, SparseTensor) == True
         x = x.replace(F.normalize(x.feats, dim=-1), x.coords)
         return (x * self.gamma * self.scale).to(x_type)
 
@@ -91,8 +84,6 @@ class SparseMultiHeadAttention(nn.Module):
             
         self.to_out = nn.Linear(channels, channels)
 
-        # if use_rope: # False
-        #     self.rope = RotaryPositionEmbedder(channels)
         
     @staticmethod
     def _linear(module: nn.Linear, x: Union[SparseTensor, torch.Tensor]) -> Union[SparseTensor, torch.Tensor]:
@@ -104,12 +95,6 @@ class SparseMultiHeadAttention(nn.Module):
 
     @staticmethod
     def _reshape_chs(x: Union[SparseTensor, torch.Tensor], shape: Tuple[int, ...]) -> Union[SparseTensor, torch.Tensor]:
-        # xxxx_3333
-        # if isinstance(x, SparseTensor):
-        #     return x.reshape(*shape)
-        # else:
-        #     pdb.set_trace()
-        #     return x.reshape(*x.shape[:2], *shape)
         return x.reshape(*shape)
 
     def _fused_pre(self, x: Union[SparseTensor, torch.Tensor], num_fused: int) -> Union[SparseTensor, torch.Tensor]:
@@ -129,9 +114,7 @@ class SparseMultiHeadAttention(nn.Module):
             # == SparseMultiHeadAttention: type=self, attn_mode=full, use_rope=False, qk_rms_norm=True, qkv_bias=True
             qkv = self._linear(self.to_qkv, x)
             qkv = self._fused_pre(qkv, num_fused=3)
-            # if self.use_rope: # False
-            #     pdb.set_trace()
-            #     # qkv = self._rope(qkv)
+
             if self.qk_rms_norm: # False | True
                 q, k, v = qkv.unbind(dim=1)
                 q = self.q_rms_norm(q)
@@ -139,12 +122,6 @@ class SparseMultiHeadAttention(nn.Module):
                 qkv = qkv.replace(torch.stack([q.feats, k.feats, v.feats], dim=1))
             if self.attn_mode == "full": # True
                 h = sparse_scaled_dot_product_attention(qkv)
-            # xxxx_3333
-            # elif self.attn_mode == "serialized":
-            #     pdb.set_trace()
-            #     # h = sparse_serialized_scaled_dot_product_self_attention(
-            #     #     qkv, self.window_size, serialize_mode=self.serialize_mode, shift_sequence=self.shift_sequence, shift_window=self.shift_window
-            #     # )
             elif self.attn_mode == "windowed":
                 h = sparse_windowed_scaled_dot_product_self_attention(
                     qkv, self.window_size, shift_window=self.shift_window
@@ -155,12 +132,6 @@ class SparseMultiHeadAttention(nn.Module):
             q = self._reshape_chs(q, (self.num_heads, -1))
             kv = self._linear(self.to_kv, context)
             kv = self._fused_pre(kv, num_fused=2)
-            # if self.qk_rms_norm: # True
-            #     pdb.set_trace()
-            #     q = self.q_rms_norm(q)
-            #     k, v = kv.unbind(dim=1)
-            #     k = self.k_rms_norm(k)
-            #     kv = kv.replace(torch.stack([k.feats, v.feats], dim=1))
             h = sparse_scaled_dot_product_attention(q, kv)
         h = self._reshape_chs(h, (-1,))
         h = self._linear(self.to_out, h)
