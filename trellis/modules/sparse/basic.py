@@ -201,9 +201,11 @@ class SparseTensor:
             scale=self._scale, 
             spatial_cache=self._spatial_cache,
         )
-
         return new_tensor
 
+        # if coords is None:
+        #     coords = self.data.indices
+        # return SparseTensor(feats, coords)
 
     def __elemwise__(self, other: Union[torch.Tensor, 'SparseTensor'], op: callable) -> 'SparseTensor':
         if isinstance(other, SparseTensor):

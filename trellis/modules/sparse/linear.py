@@ -14,4 +14,4 @@ class SparseLinear(nn.Linear):
 
     def forward(self, input: SparseTensor) -> SparseTensor:
         # pdb.set_trace()
-        return input.replace(super().forward(input.feats))
+        return input.replace(super().forward(input.feats), input.coords)
