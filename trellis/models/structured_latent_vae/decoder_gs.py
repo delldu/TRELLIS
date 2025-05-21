@@ -148,13 +148,17 @@ class SLatGaussianDecoder(SparseTransformerBase):
             # self.resolution === 64
             # x.layout[i] -- slice(0, 14955, None)
             # tensor [x.coords] size: [14955, 4], min: 0.0, max: 63.0, mean: 23.262018
-            xyz = (x.coords[x.layout[i]][:, 1:].float() + 0.5) / self.resolution
+            # xxxx_3333
+            # xyz = (x.coords[x.layout[i]][:, 1:].float() + 0.5) / self.resolution
+            xyz = (x.coords[:, 1:].float() + 0.5) / self.resolution
             # tensor [xyz] size: [14955, 3], min: 0.007812, max: 0.992188, mean: 0.492438
 
             # (Pdb) self.layout.keys() -- ['_xyz', '_features_dc', '_scaling', '_rotation', '_opacity']
             for k, v in self.layout.items():
                 if k == '_xyz':
-                    offset = x.feats[x.layout[i]][:, v['range'][0]:v['range'][1]].reshape(-1, *v['shape'])
+                    # xxxx_3333
+                    # offset = x.feats[x.layout[i]][:, v['range'][0]:v['range'][1]].reshape(-1, *v['shape'])
+                    offset = x.feats[:, v['range'][0]:v['range'][1]].reshape(-1, *v['shape'])
                     offset = offset * self.rep_config['lr'][k]
                     if self.rep_config['perturb_offset']: # True
                         offset = offset + self.offset_perturbation
@@ -162,7 +166,8 @@ class SLatGaussianDecoder(SparseTransformerBase):
                     _xyz = xyz.unsqueeze(1) + offset
                     setattr(representation, k, _xyz.flatten(0, 1))
                 else:
-                    feats = x.feats[x.layout[i]][:, v['range'][0]:v['range'][1]].reshape(-1, *v['shape']).flatten(0, 1)
+                    # feats = x.feats[x.layout[i]][:, v['range'][0]:v['range'][1]].reshape(-1, *v['shape']).flatten(0, 1)
+                    feats = x.feats[:, v['range'][0]:v['range'][1]].reshape(-1, *v['shape']).flatten(0, 1)
                     # (Pdb) self.rep_config['lr'] -- {'_xyz': 1.0, '_features_dc': 1.0, '_opacity': 1.0, '_scaling': 1.0, '_rotation': 0.1}
                     feats = feats * self.rep_config['lr'][k]
                     setattr(representation, k, feats)

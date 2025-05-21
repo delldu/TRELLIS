@@ -23,9 +23,6 @@ class SparseDownsample(nn.Module):
         self.factor = factor
 
     def forward(self, input: SparseTensor) -> SparseTensor:
-        old_feats = input.feats
-        old_coords = input.coords
-        old_layout = input.layout
         # tensor [input.coords] size: [14955, 4], min: 0.0, max: 63.0, mean: 23.262018
         # tensor [input.feats] size: [14955, 128], min: -14.195312, max: 6.210938, mean: -0.022306
 
@@ -74,7 +71,7 @@ class SparseDownsample(nn.Module):
         # tensor [input.coords] size: [14955, 4], min: 0.0, max: 63.0, mean: 23.262018
 
         out.register_spatial_cache(f'upsample_{factor}_coords', input.coords)
-        out.register_spatial_cache(f'upsample_{factor}_layout', input.layout)
+        # out.register_spatial_cache(f'upsample_{factor}_layout', input.layout)
         out.register_spatial_cache(f'upsample_{factor}_idx', idx)
 
         return out
@@ -102,14 +99,14 @@ class SparseUpsample(nn.Module):
 
         # xxxx_3333
         new_coords = input.get_spatial_cache(f'upsample_{factor}_coords')
-        new_layout = input.get_spatial_cache(f'upsample_{factor}_layout')
+        # new_layout = input.get_spatial_cache(f'upsample_{factor}_layout')
         idx = input.get_spatial_cache(f'upsample_{factor}_idx') # idx.size() -- [14955]
 
-        if any([x is None for x in [new_coords, new_layout, idx]]):
-            raise ValueError('Upsample cache not found. SparseUpsample must be paired with SparseDownsample.')
-        else:
-            # print(f" ................. upsample_{factor}_* SparseUpsample cached OK .................")
-            assert factor == (2, 2, 2)
+        # if any([x is None for x in [new_coords, new_layout, idx]]):
+        #     raise ValueError('Upsample cache not found. SparseUpsample must be paired with SparseDownsample.')
+        # else:
+        #     # print(f" ................. upsample_{factor}_* SparseUpsample cached OK .................")
+        #     assert factor == (2, 2, 2)
 
         new_feats = input.feats[idx]
         # xxxx_3333
@@ -118,7 +115,8 @@ class SparseUpsample(nn.Module):
         # (Pdb) input.shape, new_layout
         # (torch.Size([1, 2048]), [slice(0, 14955, None)])
 
-        out = SparseTensor(new_feats, new_coords, input.shape, new_layout)
+        # out = SparseTensor(new_feats, new_coords, input.shape, new_layout)
+        out = SparseTensor(new_feats, new_coords, input.shape)
         out._scale = tuple([s * f for s, f in zip(input._scale, factor)])
         out._spatial_cache = input._spatial_cache
         # out._spatial_cache['(0, 0, 0)'].keys() -- dict_keys(['upsample_(2, 2, 2)_coords', 'upsample_(2, 2, 2)_layout', 'upsample_(2, 2, 2)_idx'])

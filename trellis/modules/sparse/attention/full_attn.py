@@ -29,7 +29,10 @@ def sparse_scaled_dot_product_attention(*args, **kwargs):
         device = qkv.device
 
         s = qkv
-        q_seqlen = [qkv.layout[i].stop - qkv.layout[i].start for i in range(qkv.shape[0])] # xxxx_3333
+        # qkv.layout = [slice(0, qkv.coords.size(0), None)]
+        # q_seqlen = [qkv.layout[i].stop - qkv.layout[i].start for i in range(qkv.shape[0])] # xxxx_3333
+        q_seqlen = [qkv.coords.size(0) for i in range(qkv.shape[0])] # xxxx_3333
+
         kv_seqlen = q_seqlen
         qkv = qkv.feats     # [T, 3, H, C]
 
@@ -46,7 +49,9 @@ def sparse_scaled_dot_product_attention(*args, **kwargs):
         assert isinstance(q, SparseTensor) == True
         assert len(q.shape) == 3, f"Invalid shape for q, got {q.shape}, expected [N, *, H, C]"
         s = q
-        q_seqlen = [q.layout[i].stop - q.layout[i].start for i in range(q.shape[0])]
+        # q_seqlen = [q.layout[i].stop - q.layout[i].start for i in range(q.shape[0])]
+        q_seqlen = [q.coords.size(0) for i in range(q.shape[0])] # xxxx_3333
+
         q = q.feats     # [T_Q, H, C]
 
         assert len(kv.shape) == 5, f"Invalid shape for kv, got {kv.shape}, expected [N, L, 2, H, C]"
@@ -69,14 +74,16 @@ def sparse_scaled_dot_product_attention(*args, **kwargs):
         assert isinstance(q, SparseTensor) == True
         assert len(q.shape) == 3, f"Invalid shape for q, got {q.shape}, expected [N, *, H, Ci]"
         s = q
-        q_seqlen = [q.layout[i].stop - q.layout[i].start for i in range(q.shape[0])]
+        # q_seqlen = [q.layout[i].stop - q.layout[i].start for i in range(q.shape[0])]
+        q_seqlen = [q.coords.size(0) for i in range(q.shape[0])] # xxxx_3333
         q = q.feats     # [T_Q, H, Ci]
 
         assert isinstance(k, SparseTensor) == True
 
         assert len(k.shape) == 3, f"Invalid shape for k, got {k.shape}, expected [N, *, H, Ci]"
         assert len(v.shape) == 3, f"Invalid shape for v, got {v.shape}, expected [N, *, H, Co]"
-        kv_seqlen = [k.layout[i].stop - k.layout[i].start for i in range(k.shape[0])]
+        # kv_seqlen = [k.layout[i].stop - k.layout[i].start for i in range(k.shape[0])]
+        kv_seqlen = [k.coords.size(0) for i in range(k.shape[0])] # xxxx_3333
         k = k.feats     # [T_KV, H, Ci]
         v = v.feats     # [T_KV, H, Co]
 
