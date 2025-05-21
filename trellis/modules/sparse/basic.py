@@ -71,9 +71,9 @@ class SparseTensor:
             if 'shape' in kwargs: # True
                 shape = kwargs['shape']
                 del kwargs['shape']
-            if 'layout' in kwargs: # True
-                layout = kwargs['layout']
-                del kwargs['layout']
+            # if 'layout' in kwargs: # True
+            #     layout = kwargs['layout']
+            #     del kwargs['layout']
 
             self.data = data
             if shape is None: # True
@@ -237,6 +237,8 @@ class SparseTensor:
         # xxxx_3333
         new_tensor = SparseTensor(new_data, shape=torch.Size(new_shape), layout=self.layout, scale=self._scale, \
                 spatial_cache=self._spatial_cache)
+        # new_tensor = SparseTensor(new_data, shape=torch.Size(new_shape), scale=self._scale, \
+        #         spatial_cache=self._spatial_cache)
 
         return new_tensor
 
@@ -248,7 +250,7 @@ class SparseTensor:
                 # print("===> sparse_batch_broadcast S1 ...")
                 other = torch.broadcast_to(other, self.shape)
                 # print("===> sparse_batch_broadcast S2 ...")
-                other = sparse_batch_broadcast(self, other)
+                # other = sparse_batch_broadcast(self, other)
                 # print("===> sparse_batch_broadcast S3 ...")
             except:
                 # print(f"===> sparse_batch_broadcast S4 ... {type(other)}")
@@ -305,15 +307,15 @@ class SparseTensor:
         return cur_scale_cache.get(key, None)
 
 
-def sparse_batch_broadcast(input: SparseTensor, other: torch.Tensor) -> torch.Tensor:
-    """
-    Broadcast a 1D tensor to a sparse tensor along the batch dimension then perform an operation.
-    """
-    # coords, feats = input.coords, input.feats
-    feats = input.feats
-    broadcasted = torch.zeros_like(feats)
-    for k in range(input.shape[0]):
-        broadcasted[input.layout[k]] = other[k] # xxxx_3333
+# def sparse_batch_broadcast(input: SparseTensor, other: torch.Tensor) -> torch.Tensor:
+#     """
+#     Broadcast a 1D tensor to a sparse tensor along the batch dimension then perform an operation.
+#     """
+#     # coords, feats = input.coords, input.feats
+#     feats = input.feats
+#     broadcasted = torch.zeros_like(feats)
+#     for k in range(input.shape[0]):
+#         broadcasted[input.layout[k]] = other[k] # xxxx_3333
 
-    # input.layout[0] -- slice(0, 14955, None), input.coords.size() -- [14955, 4]
-    return broadcasted
+#     # input.layout[0] -- slice(0, 14955, None), input.coords.size() -- [14955, 4]
+#     return broadcasted
