@@ -50,12 +50,8 @@ class SparseTensor:
                 shape = self.__cal_shape(feats, coords)
             else:
                 pass #pdb.set_trace()
-            # if layout is None: # True | False
-            #     layout = self.__cal_layout(coords, shape[0])
-            # else:
-            #     pass #pdb.set_trace()
 
-            spatial_shape = (coords.max(0)[0][1:] + 1).tolist()
+            spatial_shape = (coords.max(0)[0][1:] + 1).tolist() # xxxx_3333
             # self.data = SparseConvTensor(feats.reshape(feats.shape[0], -1), coords, spatial_shape, shape[0], **kwargs)
             # self.data._features = feats
             # pdb.set_trace()
@@ -64,29 +60,21 @@ class SparseTensor:
 
         elif method_id == 1: # SparseConvTensor
             # SparseTensor: args=(SparseConvTensor[shape=torch.Size([119640, 768])],), 
-            #     kwargs=dict_keys(['shape', 'layout', 'scale', 'spatial_cache'])
+            #     kwargs=dict_keys(['shape', 'scale', 'spatial_cache'])
             # ----------------------------------------------------------------------------------------------
             data, shape, layout = args + (None,) * (3 - len(args))
 
             if 'shape' in kwargs: # True
                 shape = kwargs['shape']
                 del kwargs['shape']
-            # if 'layout' in kwargs: # True
-            #     layout = kwargs['layout']
-            #     del kwargs['layout']
 
             self.data = data
             if shape is None: # True
                 shape = self.__cal_shape(self.feats, self.coords)
             else:
                 pass # pdb.set_trace()
-            # if layout is None: # False
-            #     layout = self.__cal_layout(self.coords, shape[0])
-            # else:
-            #     pass # pdb.set_trace()
 
         self._shape = shape
-        # self._layout = layout
         self._scale = kwargs.get('scale', (1, 1, 1))
         self._spatial_cache = kwargs.get('spatial_cache', {})
 
@@ -99,47 +87,24 @@ class SparseTensor:
         # assert shape == [1, 8] or ...
         return torch.Size(shape) # [1, 8]
     
-    # def __cal_layout(self, coords, batch_size):
-    #     # coords.size() -- [14955, 4]
-    #     # batch_size = 1
-    #     assert batch_size == 1
-    #     seq_len = torch.bincount(coords[:, 0], minlength=batch_size)
-    #     offset = torch.cumsum(seq_len, dim=0) # [14955]
-    #     layout = [slice((offset[i] - seq_len[i]).item(), offset[i].item()) for i in range(batch_size)]
-    #     # layout -- [slice(0, 14955, None)]
-    #     assert layout == [slice(0, coords.size(0), None)]
-
-    #     return layout
-    
     @property
     def shape(self) -> torch.Size:
         return self._shape
-    
-    # @property
-    # def layout(self) -> List[slice]:
-    #     return self._layout
 
     @property
     def feats(self) -> torch.Tensor:
         return self.data.features
     
-    # @feats.setter
-    # def feats(self, value: torch.Tensor):
-    #     self.data.features = value
-
     @property
     def coords(self) -> torch.Tensor:
         return self.data.indices
         
-
     @property
     def dtype(self):
-        # return self.feats.dtype
         return self.data.features.dtype
 
     @property
     def device(self):
-        # return self.feats.device
         return self.data.features.device
 
     def output_var(self, s):
@@ -232,26 +197,16 @@ class SparseTensor:
             pass #pdb.set_trace()
 
         # xxxx_3333
-        # new_tensor = SparseTensor(new_data, shape=torch.Size(new_shape), layout=self.layout, scale=self._scale, \
-        #         spatial_cache=self._spatial_cache)
-        new_tensor = SparseTensor(new_data, shape=torch.Size(new_shape), scale=self._scale, \
-                spatial_cache=self._spatial_cache)
+        new_tensor = SparseTensor(new_data, shape=torch.Size(new_shape), 
+            scale=self._scale, 
+            spatial_cache=self._spatial_cache,
+        )
 
         return new_tensor
 
 
     def __elemwise__(self, other: Union[torch.Tensor, 'SparseTensor'], op: callable) -> 'SparseTensor':
-        # # ==> pdb.set_trace()
-        # if isinstance(other, torch.Tensor): # True
-        #     try:
-        #         # print("===> sparse_batch_broadcast S1 ...")
-        #         other = torch.broadcast_to(other, self.shape)
-        #     except:
-        #         # ==> pdb.set_trace()
-        #         # other.size() -- [3185, 1024], self.shape -- [1, 1024], self.feats.size() -- [3185, 1024]
-        #         pass
         if isinstance(other, SparseTensor):
-            # ==> pdb.set_trace()
             other = other.feats
         new_feats = op(self.feats, other)
         new_tensor = self.replace(new_feats)

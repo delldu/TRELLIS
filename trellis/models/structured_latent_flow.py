@@ -155,29 +155,28 @@ class SLatFlowModel(nn.Module):
         if pe_mode == "ape": # True
             self.pos_embedder = AbsolutePositionEmbedder(model_channels)
 
-        self.input_layer = sp.SparseLinear(in_channels, model_channels if io_block_channels is None else io_block_channels[0])
+        self.input_layer = sp.SparseLinear(in_channels, io_block_channels[0])
         
         self.input_blocks = nn.ModuleList([])
 
         # io_block_channels == [128], [model_channels] == [1024]
-        if io_block_channels is not None: # True
-            for chs, next_chs in zip(io_block_channels, io_block_channels[1:] + [model_channels]):
-                self.input_blocks.extend([
-                    SparseResBlock3d(
-                        chs,
-                        model_channels,
-                        out_channels=chs,
-                    )
-                    for _ in range(num_io_res_blocks-1) # num_io_res_blocks === 2
-                ])
-                self.input_blocks.append(
-                    SparseResBlock3d(
-                        chs,
-                        model_channels,
-                        out_channels=next_chs,
-                        downsample=True,
-                    )
+        for chs, next_chs in zip(io_block_channels, io_block_channels[1:] + [model_channels]):
+            self.input_blocks.extend([
+                SparseResBlock3d(
+                    chs,
+                    model_channels,
+                    out_channels=chs,
                 )
+                for _ in range(num_io_res_blocks-1) # num_io_res_blocks === 2
+            ])
+            self.input_blocks.append(
+                SparseResBlock3d(
+                    chs,
+                    model_channels,
+                    out_channels=next_chs,
+                    downsample=True,
+                )
+            )
             
         self.blocks = nn.ModuleList([
             ModulatedSparseTransformerCrossBlock(
@@ -196,24 +195,23 @@ class SLatFlowModel(nn.Module):
 
         self.out_blocks = nn.ModuleList([])
 
-        if io_block_channels is not None:
-            for chs, prev_chs in zip(reversed(io_block_channels), [model_channels] + list(reversed(io_block_channels[1:]))):
-                self.out_blocks.append(
-                    SparseResBlock3d(
-                        prev_chs * 2 if self.use_skip_connection else prev_chs,
-                        model_channels,
-                        out_channels=chs,
-                        upsample=True,
-                    )
+        for chs, prev_chs in zip(reversed(io_block_channels), [model_channels] + list(reversed(io_block_channels[1:]))):
+            self.out_blocks.append(
+                SparseResBlock3d(
+                    prev_chs * 2 if self.use_skip_connection else prev_chs,
+                    model_channels,
+                    out_channels=chs,
+                    upsample=True,
                 )
-                self.out_blocks.extend([
-                    SparseResBlock3d(
-                        chs * 2 if self.use_skip_connection else chs, # self.use_skip_connection === True
-                        model_channels,
-                        out_channels=chs,
-                    )
-                    for _ in range(num_io_res_blocks-1)
-                ])
+            )
+            self.out_blocks.extend([
+                SparseResBlock3d(
+                    chs * 2 if self.use_skip_connection else chs, # self.use_skip_connection === True
+                    model_channels,
+                    out_channels=chs,
+                )
+                for _ in range(num_io_res_blocks-1)
+            ])
             
         self.out_layer = sp.SparseLinear(model_channels if io_block_channels is None else io_block_channels[0], out_channels)
 
@@ -251,6 +249,7 @@ class SLatFlowModel(nn.Module):
         h2 = self.input_layer.float()(x).type(self.dtype)
         t_emb = self.t_embedder.float()(t)
         if self.share_mod: # False
+            pdb.set_trace()
             t_emb = self.adaLN_modulation(t_emb)
 
         t_emb = t_emb.type(self.dtype)
@@ -272,6 +271,7 @@ class SLatFlowModel(nn.Module):
             if self.use_skip_connection: # True
                 h2 = block(h2.replace(torch.cat([h2.feats, skip], dim=1)), t_emb)
             else:
+                pdb.set_trace()
                 h2 = block(h2, t_emb)
 
         h2 = h2.replace(F.layer_norm(h2.feats, h2.feats.shape[-1:]))

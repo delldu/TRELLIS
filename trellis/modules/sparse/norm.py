@@ -19,18 +19,21 @@ class SparseGroupNorm(nn.GroupNorm):
         nfeats = torch.zeros_like(input.feats)
         assert input.shape[0] == 1
 
-        for k in range(input.shape[0]):
-            # bfeats = input.feats[input.layout[k]] # input.layout[k] -- slice(0, 14955, None), input.coords.size() -- [14955, 4]
-            bfeats = input.feats
+        # for k in range(input.shape[0]):
+        #     bfeats = input.feats
+        #     bfeats = bfeats.permute(1, 0).reshape(1, input.shape[1], -1)
+        #     bfeats = super().forward(bfeats)
+        #     bfeats = bfeats.reshape(input.shape[1], -1).permute(1, 0)
+        #     nfeats = bfeats # xxxx_3333
 
-            bfeats = bfeats.permute(1, 0).reshape(1, input.shape[1], -1)
-            bfeats = super().forward(bfeats)
-            bfeats = bfeats.reshape(input.shape[1], -1).permute(1, 0)
-            # nfeats[input.layout[k]] = bfeats # xxxx_3333
-            nfeats = bfeats # xxxx_3333
+        # assert (nfeats - bfeats).abs().max() < 0.01
+        # return input.replace(nfeats)
 
-        assert (nfeats - bfeats).abs().max() < 0.01
-        return input.replace(nfeats)
+        bfeats = input.feats
+        bfeats = bfeats.permute(1, 0).reshape(1, input.shape[1], -1)
+        bfeats = super().forward(bfeats)
+        bfeats = bfeats.reshape(input.shape[1], -1).permute(1, 0)
+        return input.replace(bfeats)
 
 
 class SparseLayerNorm(nn.LayerNorm):
@@ -41,17 +44,22 @@ class SparseLayerNorm(nn.LayerNorm):
         nfeats = torch.zeros_like(input.feats)
         assert input.shape[0] == 1
 
-        for k in range(input.shape[0]):
-            # bfeats = input.feats[input.layout[k]]
-            bfeats = input.feats
-            bfeats = bfeats.permute(1, 0).reshape(1, input.shape[1], -1)
-            bfeats = super().forward(bfeats)
-            bfeats = bfeats.reshape(input.shape[1], -1).permute(1, 0)
-            # nfeats[input.layout[k]] = bfeats # xxxx_3333
-            nfeats = bfeats # xxxx_3333
+        # for k in range(input.shape[0]):
+        #     bfeats = input.feats
+        #     bfeats = bfeats.permute(1, 0).reshape(1, input.shape[1], -1)
+        #     bfeats = super().forward(bfeats)
+        #     bfeats = bfeats.reshape(input.shape[1], -1).permute(1, 0)
+        #     nfeats = bfeats # xxxx_3333
 
-        assert (nfeats - bfeats).abs().max() < 0.01
-        return input.replace(nfeats, input.coords)
+        # assert (nfeats - bfeats).abs().max() < 0.01
+        # return input.replace(nfeats, input.coords)
+
+        bfeats = input.feats
+        bfeats = bfeats.permute(1, 0).reshape(1, input.shape[1], -1)
+        bfeats = super().forward(bfeats)
+        bfeats = bfeats.reshape(input.shape[1], -1).permute(1, 0)
+
+        return input.replace(bfeats)
 
 
 class SparseGroupNorm32(SparseGroupNorm):
