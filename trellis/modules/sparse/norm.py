@@ -11,20 +11,24 @@ __all__ = [
     'SparseLayerNorm32',
 ]
 
-
 class SparseGroupNorm(nn.GroupNorm):
     def __init__(self, num_groups, num_channels, eps=1e-5, affine=True):
         super().__init__(num_groups, num_channels, eps, affine)
 
     def forward(self, input: SparseTensor) -> SparseTensor:
         nfeats = torch.zeros_like(input.feats)
+        assert input.shape[0] == 1
+
         for k in range(input.shape[0]):
-            bfeats = input.feats[input.layout[k]]
+            bfeats = input.feats[input.layout[k]] # input.layout[k] -- slice(0, 14955, None), input.coords.size() -- [14955, 4]
+
             bfeats = bfeats.permute(1, 0).reshape(1, input.shape[1], -1)
             bfeats = super().forward(bfeats)
             bfeats = bfeats.reshape(input.shape[1], -1).permute(1, 0)
             nfeats[input.layout[k]] = bfeats # xxxx_3333
-        return input.replace(nfeats, input.coords)
+
+        assert (nfeats - bfeats).abs().max() < 0.01
+        return input.replace(nfeats)
 
 
 class SparseLayerNorm(nn.LayerNorm):
@@ -33,12 +37,16 @@ class SparseLayerNorm(nn.LayerNorm):
 
     def forward(self, input: SparseTensor) -> SparseTensor:
         nfeats = torch.zeros_like(input.feats)
+        assert input.shape[0] == 1
+
         for k in range(input.shape[0]):
             bfeats = input.feats[input.layout[k]]
             bfeats = bfeats.permute(1, 0).reshape(1, input.shape[1], -1)
             bfeats = super().forward(bfeats)
             bfeats = bfeats.reshape(input.shape[1], -1).permute(1, 0)
             nfeats[input.layout[k]] = bfeats # xxxx_3333
+
+        assert (nfeats - bfeats).abs().max() < 0.01
         return input.replace(nfeats, input.coords)
 
 

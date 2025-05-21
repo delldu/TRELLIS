@@ -9,10 +9,10 @@ __all__ = [
 
 class SparseSiLU(nn.SiLU):
     def forward(self, input: SparseTensor) -> SparseTensor:
-        return input.replace(super().forward(input.feats), input.coords)
+        return input.replace(super().forward(input.feats))
 
 class SparseGELU(nn.GELU):
     def forward(self, input: SparseTensor) -> SparseTensor:
-        return input.replace(super().forward(input.feats), input.coords)
+        return input.replace(super().forward(input.feats))
 
 

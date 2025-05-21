@@ -11,6 +11,10 @@ __all__ = [
 
 # https://zhuanlan.zhihu.com/p/720509689
 class SparseTensor:
+    '''
+        coords=coords,
+        feats=feats,    
+    '''
     def __init__(self, *args, **kwargs):
         # args = ()
         # kwargs = {}
@@ -51,14 +55,11 @@ class SparseTensor:
             else:
                 pass #pdb.set_trace()
 
-            spatial_shape = list(coords.max(0)[0] + 1)[1:]
-            # spatial_shape -- [tensor(60, device='cuda:0', dtype=torch.int32), 
-            #     tensor(46, device='cuda:0', dtype=torch.int32), 
-            #     tensor(64, device='cuda:0', dtype=torch.int32)]
-            # self.data = SparseTensorData(feats.reshape(feats.shape[0], -1), coords, spatial_shape, shape[0], **kwargs)
-
+            spatial_shape = (coords.max(0)[0][1:] + 1).tolist()
             # self.data = SparseConvTensor(feats.reshape(feats.shape[0], -1), coords, spatial_shape, shape[0], **kwargs)
             # self.data._features = feats
+            # pdb.set_trace()
+
             self.data = SparseConvTensor(feats, coords, spatial_shape, shape[0]) #  shape[0] -- batch_size
 
         elif method_id == 1: # SparseConvTensor
@@ -114,9 +115,6 @@ class SparseTensor:
     def shape(self) -> torch.Size:
         return self._shape
     
-    def dim(self) -> int:
-        return len(self.shape)
-    
     @property
     def layout(self) -> List[slice]:
         return self._layout
@@ -125,25 +123,27 @@ class SparseTensor:
     def feats(self) -> torch.Tensor:
         return self.data.features
     
-    @feats.setter
-    def feats(self, value: torch.Tensor):
-        self.data.features = value
+    # @feats.setter
+    # def feats(self, value: torch.Tensor):
+    #     self.data.features = value
 
     @property
     def coords(self) -> torch.Tensor:
         return self.data.indices
         
-    @coords.setter
-    def coords(self, value: torch.Tensor):
-        self.data.indices = value
+    # @coords.setter
+    # def coords(self, value: torch.Tensor):
+    #     self.data.indices = value
 
     @property
     def dtype(self):
-        return self.feats.dtype
+        # return self.feats.dtype
+        return self.data.features.dtype
 
     @property
     def device(self):
-        return self.feats.device
+        # return self.feats.device
+        return self.data.features.device
 
     def output_var(self, s):
         todos.debug.output_var(f"{s} data.coords", self.data.indices)
@@ -237,6 +237,7 @@ class SparseTensor:
         # xxxx_3333
         new_tensor = SparseTensor(new_data, shape=torch.Size(new_shape), layout=self.layout, scale=self._scale, \
                 spatial_cache=self._spatial_cache)
+
         return new_tensor
 
 
@@ -257,7 +258,7 @@ class SparseTensor:
             # ==> pdb.set_trace()
             other = other.feats
         new_feats = op(self.feats, other)
-        new_tensor = self.replace(new_feats, self.coords)
+        new_tensor = self.replace(new_feats)
 
         return new_tensor
 
@@ -279,18 +280,16 @@ class SparseTensor:
         assert idx == 0
         return SparseTensor(feats=self.feats, coords=self.coords)
 
+    # xxxx_3333
     def register_spatial_cache(self, key, value) -> None:
-        """
-        Register a spatial cache.
-        The spatial cache can be any thing you want to cache.
-        The registery and retrieval of the cache is based on current scale.
-        """
+        """ Register a spatial cache. """
         scale_key = str(self._scale)
         print(f"register_spatial_cache: scale_key = {scale_key}, key = {key}, value={value} ...")
         if scale_key not in self._spatial_cache:
             self._spatial_cache[scale_key] = {}
         self._spatial_cache[scale_key][key] = value
 
+    # xxxx_3333
     def get_spatial_cache(self, key=None):
         """
         Get a spatial cache.
@@ -314,7 +313,7 @@ def sparse_batch_broadcast(input: SparseTensor, other: torch.Tensor) -> torch.Te
     feats = input.feats
     broadcasted = torch.zeros_like(feats)
     for k in range(input.shape[0]):
-        broadcasted[input.layout[k]] = other[k]
+        broadcasted[input.layout[k]] = other[k] # xxxx_3333
 
+    # input.layout[0] -- slice(0, 14955, None), input.coords.size() -- [14955, 4]
     return broadcasted
-

@@ -40,7 +40,7 @@ class FlowEulerSampler(Sampler):
         # t --- 1.0, ... 0.0
         assert kwargs == {}
 
-        t = torch.tensor([1000 * t] * x_t.shape[0], device=x_t.device, dtype=x_t.dtype)
+        t = torch.tensor([1000 * t] * x_t.shape[0], device=x_t.device, dtype=x_t.dtype) # xxxx_3333 
 
         # tensor [cond] size: [1, 1374, 1024], min: -25.644331, max: 15.487422, mean: 0.0
         if cond is not None and cond.shape[0] == 1 and x_t.shape[0] > 1: # False

@@ -33,7 +33,6 @@ class SparseResBlock3d(nn.Module):
         self.norm1 = LayerNorm32(channels, elementwise_affine=True, eps=1e-6)
         self.norm2 = LayerNorm32(self.out_channels, elementwise_affine=False, eps=1e-6)
         self.conv1 = sp.SparseConv3d(channels, self.out_channels, 3)
-        # self.conv2 = zero_module(sp.SparseConv3d(self.out_channels, self.out_channels, 3))
         self.conv2 = sp.SparseConv3d(self.out_channels, self.out_channels, 3)
         self.emb_layers = nn.Sequential(
             nn.SiLU(),
@@ -60,11 +59,11 @@ class SparseResBlock3d(nn.Module):
         scale, shift = torch.chunk(emb_out, 2, dim=1)
 
         x = self._updown(x) # down or up ???
-        h2 = x.replace(self.norm1.float()(x.feats), x.coords)
-        h2 = h2.replace(F.silu(h2.feats), h2.coords)
+        h2 = x.replace(self.norm1.float()(x.feats))
+        h2 = h2.replace(F.silu(h2.feats))
         h2 = self.conv1(h2)
-        h2 = h2.replace(self.norm2(h2.feats), h2.coords) * (1 + scale) + shift
-        h2 = h2.replace(F.silu(h2.feats), h2.coords)
+        h2 = h2.replace(self.norm2(h2.feats)) * (1 + scale) + shift
+        h2 = h2.replace(F.silu(h2.feats))
         h2 = self.conv2(h2)
         h2 = h2 + self.skip_connection(x)
 

@@ -24,7 +24,7 @@ class SparseConv3d(nn.Module):
 
         new_shape = [x.shape[0], self.conv.out_channels]
         new_layout = x.layout
-
+        # xxxx_3333
         out = SparseTensor(
             new_data, shape=torch.Size(new_shape), layout=new_layout,
             scale=tuple([s * stride for s, stride in zip(x._scale, self.stride)]),
