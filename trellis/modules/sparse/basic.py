@@ -28,7 +28,7 @@ class SparseTensor:
             method_id = 1 if 'data' in kwargs else 0
             assert method_id == 0
 
-        print(f"SparseTensor: method_id={method_id}, args={args}, kwargs={kwargs.keys()}")
+        # print(f"SparseTensor: method_id={method_id}, args={args}, kwargs={kwargs.keys()}")
 
         # assert method_id == 0 or 1
         if method_id == 0:
@@ -65,6 +65,7 @@ class SparseTensor:
             self.data = SparseConvTensor(feats.reshape(feats.shape[0], -1), coords, spatial_shape, shape[0]) #  shape[0] -- batch_size
 
         elif method_id == 1: # SparseConvTensor
+            pdb.set_trace()
             # SparseTensor: args=(SparseConvTensor[shape=torch.Size([119640, 768])],), 
             #     kwargs=dict_keys(['shape', 'scale', 'spatial_cache'])
             # ----------------------------------------------------------------------------------------------
