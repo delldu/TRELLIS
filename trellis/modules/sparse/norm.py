@@ -1,14 +1,11 @@
 import torch
 import torch.nn as nn
 from . import SparseTensor
-from . import DEBUG
 import pdb
 
 __all__ = [
     'SparseGroupNorm',
     'SparseLayerNorm',
-    'SparseGroupNorm32',
-    # 'SparseLayerNorm32',
 ]
 
 class SparseGroupNorm(nn.GroupNorm):
@@ -16,9 +13,6 @@ class SparseGroupNorm(nn.GroupNorm):
         super().__init__(num_groups, num_channels, eps, affine)
 
     def forward(self, input: SparseTensor) -> SparseTensor:
-        # nfeats = torch.zeros_like(input.feats)
-        assert input.shape[0] == 1
-
         bfeats = input.feats
         bfeats = bfeats.permute(1, 0).reshape(1, input.shape[1], -1)
         bfeats = super().forward(bfeats)
@@ -31,9 +25,6 @@ class SparseLayerNorm(nn.LayerNorm):
         super().__init__(normalized_shape, eps, elementwise_affine)
 
     def forward(self, input: SparseTensor) -> SparseTensor:
-        # nfeats = torch.zeros_like(input.feats)
-        assert input.shape[0] == 1
-
         bfeats = input.feats
         bfeats = bfeats.permute(1, 0).reshape(1, input.shape[1], -1)
         bfeats = super().forward(bfeats)
@@ -41,16 +32,3 @@ class SparseLayerNorm(nn.LayerNorm):
         return input.replace(bfeats)
 
 
-class SparseGroupNorm32(SparseGroupNorm):
-    """
-    A GroupNorm layer that converts to float32 before the forward pass.
-    """
-    def forward(self, x: SparseTensor) -> SparseTensor:
-        return super().forward(x.float()).type(x.dtype)
-
-# class SparseLayerNorm32(SparseLayerNorm):
-#     """
-#     A LayerNorm layer that converts to float32 before the forward pass.
-#     """
-#     def forward(self, x: SparseTensor) -> SparseTensor:
-#         return super().forward(x.float()).type(x.dtype)

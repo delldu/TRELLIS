@@ -14,11 +14,6 @@ import pdb
 class SparseSubdivideBlock3d(nn.Module):
     """
     A 3D subdivide block that can subdivide the sparse tensor.
-
-    Args:
-        channels: channels in the inputs and outputs.
-        out_channels: if specified, the number of output channels.
-        num_groups: the number of groups for the group norm.
     """
     def __init__(
         self,
@@ -37,7 +32,6 @@ class SparseSubdivideBlock3d(nn.Module):
         self.out_channels = out_channels or channels
 
         self.act_layers = nn.Sequential(
-            # sp.SparseGroupNorm32(num_groups, channels), # (32, 768)
             sp.SparseGroupNorm(num_groups, channels), # (32, 768)
             sp.SparseSiLU()
         )
@@ -46,7 +40,6 @@ class SparseSubdivideBlock3d(nn.Module):
         
         self.out_layers = nn.Sequential(
             sp.SparseConv3d(channels, self.out_channels, 3, indice_key=f"res_{self.out_resolution}"),
-            # sp.SparseGroupNorm32(num_groups, self.out_channels),
             sp.SparseGroupNorm(num_groups, self.out_channels),
             sp.SparseSiLU(),
             sp.SparseConv3d(self.out_channels, self.out_channels, 3, indice_key=f"res_{self.out_resolution}"),
@@ -58,7 +51,7 @@ class SparseSubdivideBlock3d(nn.Module):
             self.skip_connection = sp.SparseConv3d(channels, self.out_channels, 1, indice_key=f"res_{self.out_resolution}")
         
     def forward(self, x: sp.SparseTensor) -> sp.SparseTensor:
-        h2 = self.act_layers.float()(x) # SparseGroupNorm32
+        h2 = self.act_layers.float()(x) # SparseGroupNorm
         h2 = self.sub(h2)
         x = self.sub(x)
         h2 = self.out_layers.float()(h2.float())
@@ -112,7 +105,6 @@ class SLatMeshDecoder(SparseTransformerBase):
         assert pe_mode == 'ape'
         assert use_fp16 == True
         assert qk_rms_norm == False
-        
 
         # xxxx_3333
         self.mesh_extractor = SparseFeatures2Mesh(res=resolution*4, use_color=True)

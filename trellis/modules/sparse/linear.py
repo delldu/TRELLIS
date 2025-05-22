@@ -14,4 +14,8 @@ class SparseLinear(nn.Linear):
 
     def forward(self, input: SparseTensor) -> SparseTensor:
         # pdb.set_trace()
-        return input.replace(super().forward(input.feats), input.coords)
+        # return input.replace(super().forward(input.feats), input.coords)
+
+        output_features = torch.matmul(input.feats, self.weight.t())
+        output_features = output_features + self.bias        
+        return input.replace(output_features, input.coords)
