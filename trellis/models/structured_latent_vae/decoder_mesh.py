@@ -3,7 +3,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
-# from ...modules.utils import zero_module, convert_module_to_f16, convert_module_to_f32
 from ...modules.utils import convert_module_to_f16, convert_module_to_f32
 from ...modules import sparse as sp
 from .base import SparseTransformerBase
@@ -38,7 +37,8 @@ class SparseSubdivideBlock3d(nn.Module):
         self.out_channels = out_channels or channels
 
         self.act_layers = nn.Sequential(
-            sp.SparseGroupNorm32(num_groups, channels), # (32, 768)
+            # sp.SparseGroupNorm32(num_groups, channels), # (32, 768)
+            sp.SparseGroupNorm(num_groups, channels), # (32, 768)
             sp.SparseSiLU()
         )
         
@@ -46,7 +46,8 @@ class SparseSubdivideBlock3d(nn.Module):
         
         self.out_layers = nn.Sequential(
             sp.SparseConv3d(channels, self.out_channels, 3, indice_key=f"res_{self.out_resolution}"),
-            sp.SparseGroupNorm32(num_groups, self.out_channels),
+            # sp.SparseGroupNorm32(num_groups, self.out_channels),
+            sp.SparseGroupNorm(num_groups, self.out_channels),
             sp.SparseSiLU(),
             sp.SparseConv3d(self.out_channels, self.out_channels, 3, indice_key=f"res_{self.out_resolution}"),
         )
@@ -57,15 +58,6 @@ class SparseSubdivideBlock3d(nn.Module):
             self.skip_connection = sp.SparseConv3d(channels, self.out_channels, 1, indice_key=f"res_{self.out_resolution}")
         
     def forward(self, x: sp.SparseTensor) -> sp.SparseTensor:
-        """
-        Apply the block to a Tensor, conditioned on a timestep embedding.
-
-        Args:
-            x: an [N x C x ...] Tensor of features.
-        Returns:
-            an [N x C x ...] Tensor of outputs.
-        """
-
         h2 = self.act_layers.float()(x) # SparseGroupNorm32
         h2 = self.sub(h2)
         x = self.sub(x)
@@ -85,9 +77,9 @@ class SLatMeshDecoder(SparseTransformerBase):
         num_heads: Optional[int] = None,
         num_head_channels: Optional[int] = 64,
         mlp_ratio: float = 4,
-        attn_mode: Literal["full", "shift_window", "shift_sequence", "shift_order", "swin"] = "swin",
+        attn_mode = "swin",
         window_size: int = 8,
-        pe_mode: Literal["ape", "rope"] = "ape",
+        pe_mode = "ape",
         use_fp16: bool = False,
         qk_rms_norm: bool = False,
         representation_config: dict = None,
@@ -105,9 +97,8 @@ class SLatMeshDecoder(SparseTransformerBase):
             use_fp16=use_fp16,
             qk_rms_norm=qk_rms_norm,
         )
-        # print(f"SLatMeshDecoder: resolution={resolution}, model_channels={model_channels}, latent_channels={latent_channels}, num_blocks={num_blocks}, num_heads={num_heads}, window_size={window_size}, pe_mode={pe_mode}, qk_rms_norm={qk_rms_norm}, representation_config={representation_config}")
         # SLatMeshDecoder: resolution=64, model_channels=768, latent_channels=8, num_blocks=12, num_heads=12, window_size=8, 
-        #pe_mode=ape, qk_rms_norm=False, representation_config={'use_color': True}
+        #pe_mode=ape, qk_rms_norm=False
 
         assert resolution == 64
         assert model_channels == 768
@@ -121,12 +112,10 @@ class SLatMeshDecoder(SparseTransformerBase):
         assert pe_mode == 'ape'
         assert use_fp16 == True
         assert qk_rms_norm == False
-        representation_config = {'use_color': True}
         
-        self.rep_config = representation_config
 
         # xxxx_3333
-        self.mesh_extractor = SparseFeatures2Mesh(res=resolution*4, use_color=self.rep_config.get('use_color', False))
+        self.mesh_extractor = SparseFeatures2Mesh(res=resolution*4, use_color=True)
         self.out_channels = self.mesh_extractor.feats_channels
 
         self.upsample = nn.ModuleList([
@@ -172,7 +161,7 @@ class SLatMeshDecoder(SparseTransformerBase):
         """
         ret = []
         for i in range(x.shape[0]):
-            mesh = self.mesh_extractor(x[i], training=self.training)
+            mesh = self.mesh_extractor(x, training=self.training)
             ret.append(mesh)
         return ret
 

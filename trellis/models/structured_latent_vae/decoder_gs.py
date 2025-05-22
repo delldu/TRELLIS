@@ -74,20 +74,20 @@ class SLatGaussianDecoder(SparseTransformerBase):
         assert self.rep_config['num_gaussians'] == 32
         assert self.rep_config['voxel_size'] == 1.5
 
-        perturbation = [hammersley_sequence(3, i, self.rep_config['num_gaussians']) for i in range(self.rep_config['num_gaussians'])]
+        perturbation = [hammersley_sequence(3, i, 32) for i in range(32)]
         perturbation = torch.tensor(perturbation).float() * 2 - 1
-        perturbation = perturbation / self.rep_config['voxel_size']
+        perturbation = perturbation / 1.5
         perturbation = torch.atanh(perturbation).to(self.device)
         self.register_buffer('offset_perturbation', perturbation)
         # tensor [perturbation] size: [32, 3], min: -0.804719, max: 0.733169, mean: -0.039218
 
     def _calc_layout(self) -> None:
         self.layout = {
-            '_xyz' : {'shape': (self.rep_config['num_gaussians'], 3), 'size': self.rep_config['num_gaussians'] * 3},
-            '_features_dc' : {'shape': (self.rep_config['num_gaussians'], 1, 3), 'size': self.rep_config['num_gaussians'] * 3},
-            '_scaling' : {'shape': (self.rep_config['num_gaussians'], 3), 'size': self.rep_config['num_gaussians'] * 3},
-            '_rotation' : {'shape': (self.rep_config['num_gaussians'], 4), 'size': self.rep_config['num_gaussians'] * 4},
-            '_opacity' : {'shape': (self.rep_config['num_gaussians'], 1), 'size': self.rep_config['num_gaussians']},
+            '_xyz' : {'shape': (32, 3), 'size': 32 * 3},
+            '_features_dc' : {'shape': (32, 1, 3), 'size': 32 * 3},
+            '_scaling' : {'shape': (32, 3), 'size': 32 * 3},
+            '_rotation' : {'shape': (32, 4), 'size': 32 * 4},
+            '_opacity' : {'shape': (32, 1), 'size': 32},
         }
         # self.layout -------------------------------------------------
         # _xyz {'shape': (32, 3), 'size': 96}
@@ -128,7 +128,6 @@ class SLatGaussianDecoder(SparseTransformerBase):
             # opacity_bias 0.1
             # scaling_activation softplus
             # -------------------------------------------------------------------------------------------
-
             representation = Gaussian(
                 sh_degree=0,
                 aabb=[-0.5, -0.5, -0.5, 1.0, 1.0, 1.0],

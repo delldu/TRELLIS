@@ -39,7 +39,6 @@ class SparseMultiHeadAttention(nn.Module):
         qk_rms_norm: bool = False,
     ):
         super().__init__()
-        # print(f"== SparseMultiHeadAttention: type={type}, attn_mode={attn_mode}, use_rope={use_rope}, qk_rms_norm={qk_rms_norm}, qkv_bias={qkv_bias}")
         # == SparseMultiHeadAttention: type=self, attn_mode=windowed, use_rope=False, qk_rms_norm=False, qkv_bias=True
         # == SparseMultiHeadAttention: type=self, attn_mode=full, use_rope=False, qk_rms_norm=True, qkv_bias=True
         # == SparseMultiHeadAttention: type=cross, attn_mode=full, use_rope=False, qk_rms_norm=False, qkv_bias=True

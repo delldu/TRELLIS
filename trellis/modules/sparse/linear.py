@@ -7,7 +7,7 @@ __all__ = [
     'SparseLinear'
 ]
 
-
+# xxxx_8888
 class SparseLinear(nn.Linear):
     def __init__(self, in_features, out_features, bias=True):
         super().__init__(in_features, out_features, bias)

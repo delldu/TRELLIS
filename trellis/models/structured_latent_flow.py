@@ -141,12 +141,9 @@ class SLatFlowModel(nn.Module):
         self.share_mod = share_mod
         self.dtype = torch.float16 if use_fp16 else torch.float32
 
-        if io_block_channels is not None: # True
-            assert int(np.log2(patch_size)) == np.log2(patch_size), "Patch size must be a power of 2"
-            assert np.log2(patch_size) == len(io_block_channels), "Number of IO ResBlocks must match the number of stages"
-
         self.t_embedder = TimestepEmbedder(model_channels)
         if share_mod: # False
+            pdb.set_trace()
             self.adaLN_modulation = nn.Sequential(
                 nn.SiLU(),
                 nn.Linear(model_channels, 6 * model_channels, bias=True)
@@ -213,7 +210,7 @@ class SLatFlowModel(nn.Module):
                 for _ in range(num_io_res_blocks-1)
             ])
             
-        self.out_layer = sp.SparseLinear(model_channels if io_block_channels is None else io_block_channels[0], out_channels)
+        self.out_layer = sp.SparseLinear(io_block_channels[0], out_channels)
 
         if use_fp16:
             self.convert_to_fp16()

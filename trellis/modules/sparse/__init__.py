@@ -50,7 +50,7 @@ __attributes = {
     'SparseGroupNorm': 'norm',
     'SparseLayerNorm': 'norm',
     'SparseGroupNorm32': 'norm',
-    'SparseLayerNorm32': 'norm',
+    # 'SparseLayerNorm32': 'norm',
     'SparseSiLU': 'nonlinearity',
     'SparseGELU': 'nonlinearity',
     'SparseLinear': 'linear',

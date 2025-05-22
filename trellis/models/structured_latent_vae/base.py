@@ -38,14 +38,13 @@ class SparseTransformerBase(nn.Module):
         num_heads: Optional[int] = None,
         num_head_channels: Optional[int] = 64,
         mlp_ratio: float = 4.0,
-        attn_mode: Literal["full", "shift_window", "shift_sequence", "shift_order", "swin"] = "full",
-        window_size: Optional[int] = None,
-        pe_mode: Literal["ape", "rope"] = "ape",
-        use_fp16: bool = False,
+        attn_mode = "swin",
+        window_size = 8,
+        pe_mode = "ape",
+        use_fp16: bool = True,
         qk_rms_norm: bool = False,
     ):
         super().__init__()
-        # print(f"== SparseTransformerBase: attn_mode={attn_mode}, window_size={window_size}")
         # == SparseTransformerBase: attn_mode=swin, window_size=8
 
         # assert in_channels == 8
@@ -62,6 +61,8 @@ class SparseTransformerBase(nn.Module):
 
         self.num_blocks = num_blocks
         self.window_size = window_size
+
+        assert num_heads is not None
         self.num_heads = num_heads or model_channels // num_head_channels
         self.attn_mode = attn_mode # 'swin'
         self.pe_mode = pe_mode # "ape"
@@ -86,6 +87,9 @@ class SparseTransformerBase(nn.Module):
             )
             for attn_mode, window_size, shift_sequence, shift_window, serialize_mode in block_attn_config(self)
         ])
+
+        for attn_mode, window_size, shift_sequence, shift_window, serialize_mode in block_attn_config(self):
+            print(attn_mode, window_size, shift_sequence, shift_window, serialize_mode)
 
     @property
     def device(self) -> torch.device:

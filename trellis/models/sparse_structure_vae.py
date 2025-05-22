@@ -2,10 +2,8 @@ from typing import *
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-# from ..modules.norm import GroupNorm32, ChannelLayerNorm32
 from ..modules.norm import ChannelLayerNorm32
 from ..modules.spatial import pixel_shuffle_3d
-# from ..modules.utils import zero_module, convert_module_to_f16, convert_module_to_f32
 from ..modules.utils import convert_module_to_f16, convert_module_to_f32
 import todos
 import pdb
@@ -34,13 +32,6 @@ def norm_layer(norm_type: str, *args, **kwargs) -> nn.Module:
     # == norm_layer: norm_type=layer, args=(32,), kwargs={} ...
 
     assert norm_type == "layer"
-
-    # if norm_type == "group":
-    #     return GroupNorm32(32, *args, **kwargs)
-    # elif norm_type == "layer":
-    #     return ChannelLayerNorm32(*args, **kwargs)
-    # else:
-    #     raise ValueError(f"Invalid norm type {norm_type}")
     return ChannelLayerNorm32(*args, **kwargs)
 
 
@@ -49,7 +40,7 @@ class ResBlock3d(nn.Module):
         self,
         channels: int,
         out_channels: Optional[int] = None,
-        norm_type: Literal["group", "layer"] = "layer",
+        norm_type = "layer",
     ):
         super().__init__()
         # print(f"== ResBlock3d: channels={channels}, out_channels={out_channels}, norm_type={norm_type} ...")
@@ -66,7 +57,6 @@ class ResBlock3d(nn.Module):
         self.norm1 = norm_layer(norm_type, channels)
         self.norm2 = norm_layer(norm_type, out_channels)
         self.conv1 = nn.Conv3d(channels, out_channels, 3, padding=1)
-        # self.conv2 = zero_module(nn.Conv3d(out_channels, out_channels, 3, padding=1))
         self.conv2 = nn.Conv3d(out_channels, out_channels, 3, padding=1)
         self.skip_connection = nn.Conv3d(channels, out_channels, 1) if channels != out_channels else nn.Identity()
     

@@ -91,7 +91,6 @@ class SparseStructureFlowModel(nn.Module):
         qk_rms_norm_cross: bool = False,
     ):
         super().__init__()
-        # print(f"SparseStructureFlowModel: num_head_channels={num_head_channels}, share_mod={share_mod}, qk_rms_norm_cross={qk_rms_norm_cross}")
         # SparseStructureFlowModel: num_head_channels=64, share_mod=False, qk_rms_norm_cross=False
 
         assert resolution == 16
@@ -112,7 +111,6 @@ class SparseStructureFlowModel(nn.Module):
 
         self.resolution = resolution
         self.in_channels = in_channels
-        # self.num_heads = num_heads or model_channels // num_head_channels
         self.patch_size = patch_size
         self.share_mod = share_mod
         self.dtype = torch.float16 if use_fp16 else torch.float32

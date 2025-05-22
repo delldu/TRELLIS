@@ -36,8 +36,8 @@ def calc_window_partition(
     assert isinstance(window_size, int) == True
     assert window_size == 8
 
-    shift_window = (shift_window,) * DIM if isinstance(shift_window, int) else shift_window
-    window_size = (window_size,) * DIM if isinstance(window_size, int) else window_size
+    shift_window = (shift_window,) * DIM
+    window_size = (window_size,) * DIM
     shifted_coords = tensor.coords.clone().detach()
     # shifted_coords.size() -- [14955, 4]
     # torch.tensor(shift_window, device=tensor.device, dtype=torch.int32).unsqueeze(0) == 0 or 4 ...
@@ -87,7 +87,7 @@ def sparse_windowed_scaled_dot_product_self_attention(
     """
 
     # qkv.shape = torch.Size([1, 3, 12, 64]), 
-    assert len(qkv.shape) == 4 and qkv.shape[1] == 3, f"Invalid shape for qkv, got {qkv.shape}, expected [N, 3, H, C]"
+    assert len(qkv.shape) == 4 and qkv.shape[1] == 3
     assert window_size == 8
     assert shift_window == 0 or shift_window == 4
 

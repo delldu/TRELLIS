@@ -18,6 +18,7 @@ class SparseTensor:
 
         self.data = SparseConvTensor(feats.reshape(feats.shape[0], -1), coords, spatial_shape, shape[0]) #  shape[0] -- batch_size
         self.data._features = feats # !!! import !!!
+        # self.data.replace_feature(feats) !!! wrong !!!!!!!!!!!!!!!!!!!!
 
         self.shape = shape
         self.scale = scale
@@ -83,7 +84,7 @@ class SparseTensor:
         feats = self.feats.unbind(dim)
         return [self.replace(f, self.coords) for f in feats]
 
-    def replace(self, feats: torch.Tensor, coords: Optional[torch.Tensor] = None) -> 'SparseTensor':
+    def replace(self, feats: torch.Tensor, coords = None) -> 'SparseTensor':
         new_shape = [self.shape[0]]
         new_shape.extend(feats.shape[1:])
         new_coords = coords
@@ -116,12 +117,8 @@ class SparseTensor:
         # ==> pdb.set_trace()
         return self.__elemwise__(other, torch.mul)
 
-    def __getitem__(self, idx):
-        # ==> pdb.set_trace()
-        assert idx == 0
-        return SparseTensor(self.feats, self.coords)
 
-    def register_spatial_cache(self, key, value) -> None:
+    def register_spatial_cache(self, key, value):
         scale_key = str(self.scale)
         # print(f"register_spatial_cache: scale_key = {scale_key}, key = {key}, value={value} ...")
         if scale_key not in self.spatial_cache:

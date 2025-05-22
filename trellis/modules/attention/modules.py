@@ -63,9 +63,7 @@ class MultiHeadAttention(nn.Module):
         self.num_heads = num_heads
         self._type = type
         self.attn_mode = attn_mode
-        # self.window_size = window_size
-        # self.shift_window = shift_window
-        # self.use_rope = use_rope
+
         self.qk_rms_norm = qk_rms_norm
 
         if self._type == "self":
@@ -81,8 +79,7 @@ class MultiHeadAttention(nn.Module):
             
         self.to_out = nn.Linear(channels, channels)
 
-        # if use_rope:
-        #     self.rope = RotaryPositionEmbedder(channels)
+
     
     def forward(self, x: torch.Tensor, context: Optional[torch.Tensor] = None, indices: Optional[torch.Tensor] = None) -> torch.Tensor:
         B, L, C = x.shape
