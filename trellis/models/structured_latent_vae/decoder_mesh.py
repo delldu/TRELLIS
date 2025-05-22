@@ -31,11 +31,9 @@ class SparseSubdivideBlock3d(nn.Module):
         super().__init__()
         # channels = 768
         # resolution = 64
-        # out_channels = 192
-        # num_groups = 32
+        assert out_channels is not None
+        assert num_groups == 32
 
-        # self.channels = channels
-        # self.resolution = resolution
         self.out_resolution = resolution * 2
         self.out_channels = out_channels or channels
 

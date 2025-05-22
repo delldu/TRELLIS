@@ -77,8 +77,8 @@ class SparseDownsample(nn.Module):
 
         # xxxx_3333
         out = SparseTensor(new_feats, new_coords, input.shape,) # input.shape -- [1, 128]
-        out._scale = tuple([s // f for s, f in zip(input._scale, factor)]) # input._scale --- (1, 1, 1)
-        out._spatial_cache = input._spatial_cache
+        out.scale = tuple([s // f for s, f in zip(input.scale, factor)]) # input.scale --- (1, 1, 1)
+        out.spatial_cache = input.spatial_cache
 
         # tensor [input.coords] size: [14955, 4], min: 0.0, max: 63.0, mean: 23.262018
         out.register_spatial_cache(f'upsample_{factor}_coords', input.coords)
@@ -116,8 +116,8 @@ class SparseUpsample(nn.Module):
 
         # xxxx_3333
         out = SparseTensor(new_feats, new_coords, input.shape)
-        out._scale = tuple([s * f for s, f in zip(input._scale, factor)])
-        out._spatial_cache = input._spatial_cache
+        out.scale = tuple([s * f for s, f in zip(input.scale, factor)])
+        out.spatial_cache = input.spatial_cache
 
         return out
     
@@ -155,8 +155,8 @@ class SparseSubdivide(nn.Module):
         # input.shape -- [1, 768]
         out = SparseTensor(new_feats.flatten(0, 1), new_coords.flatten(0, 1), input.shape)
         
-        out._scale = input._scale * 2
-        out._spatial_cache = input._spatial_cache
+        out.scale = input.scale * 2
+        out.spatial_cache = input.spatial_cache
 
         return out
 

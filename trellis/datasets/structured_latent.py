@@ -185,7 +185,7 @@ class SLat(SLatVisMixin, StandardDatasetBase):
                 coords=coords,
                 feats=feats,
             )
-            pack['x_0']._shape = torch.Size([len(group), *sub_batch[0]['feats'].shape[1:]])
+            pack['x_0'].shape = torch.Size([len(group), *sub_batch[0]['feats'].shape[1:]])
             pack['x_0'].register_spatial_cache('layout', layout)
             
             # collate other data
