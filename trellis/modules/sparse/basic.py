@@ -20,6 +20,7 @@ class SparseTensor:
         # kwargs = {}
         method_id = 0
 
+        # xxxx_8888
         if len(args) != 0:
             method_id = 0 if isinstance(args[0], torch.Tensor) else 1
         else:
@@ -38,6 +39,7 @@ class SparseTensor:
             # SparseTensor: args=(), kwargs=dict_keys(['feats', 'coords'])
             # ----------------------------------------------------------------------------------------------
 
+            # xxxx_8888
             if 'feats' in kwargs: # True | False
                 # ==> pdb.set_trace()
                 feats = kwargs['feats']
@@ -46,6 +48,7 @@ class SparseTensor:
                 coords = kwargs['coords']
                 del kwargs['coords']
 
+            # xxxx_8888
             if shape is None: # False | True
                 shape = self.__cal_shape(feats, coords)
             else:
@@ -64,6 +67,7 @@ class SparseTensor:
             # ----------------------------------------------------------------------------------------------
             data, shape, layout = args + (None,) * (3 - len(args))
 
+            # xxxx_8888
             if 'shape' in kwargs: # True
                 shape = kwargs['shape']
                 del kwargs['shape']
@@ -183,7 +187,7 @@ class SparseTensor:
         )
 
         assert self.data.batch_size == 1
-        new_data._features = feats
+        new_data._features = feats # !!! import !!!
         # new_data.benchmark = self.data.benchmark
         # new_data.benchmark_record = self.data.benchmark_record
         # new_data.thrust_allocator = self.data.thrust_allocator
@@ -197,6 +201,7 @@ class SparseTensor:
             pass #pdb.set_trace()
 
         # xxxx_3333
+        # new_tensor = SparseTensor(new_data.features, new_data.indices, shape=torch.Size(new_shape), 
         new_tensor = SparseTensor(new_data, shape=torch.Size(new_shape), 
             scale=self._scale, 
             spatial_cache=self._spatial_cache,
@@ -231,7 +236,8 @@ class SparseTensor:
     def __getitem__(self, idx):
         # ==> pdb.set_trace()
         assert idx == 0
-        return SparseTensor(feats=self.feats, coords=self.coords)
+        # return SparseTensor(feats=self.feats, coords=self.coords)
+        return SparseTensor(self.feats, self.coords)
 
     # xxxx_3333
     def register_spatial_cache(self, key, value) -> None:

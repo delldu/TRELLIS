@@ -14,7 +14,7 @@ class SparseMultiHeadRMSNorm(nn.Module):
         self.scale = dim ** 0.5
         self.gamma = nn.Parameter(torch.ones(heads, dim))
 
-    def forward(self, x: Union[SparseTensor, torch.Tensor]) -> Union[SparseTensor, torch.Tensor]:
+    def forward(self, x: SparseTensor) -> SparseTensor:
         x_type = x.dtype
         x = x.float()
         assert isinstance(x, SparseTensor) == True
@@ -93,11 +93,11 @@ class SparseMultiHeadAttention(nn.Module):
             return module(x)
 
     @staticmethod
-    def _reshape_chs(x: Union[SparseTensor, torch.Tensor], shape: Tuple[int, ...]) -> Union[SparseTensor, torch.Tensor]:
+    def _reshape_chs(x: SparseTensor, shape: Tuple[int, ...]) -> SparseTensor:
         assert isinstance(x, SparseTensor) == True
         return x.reshape(*shape)
 
-    def _fused_pre(self, x: Union[SparseTensor, torch.Tensor], num_fused: int) -> Union[SparseTensor, torch.Tensor]:
+    def _fused_pre(self, x: SparseTensor, num_fused: int) -> SparseTensor:
         # assert isinstance(x, SparseTensor) == True or ...
         if isinstance(x, SparseTensor):
             x_feats = x.feats.unsqueeze(0)

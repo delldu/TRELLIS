@@ -17,6 +17,8 @@ def sparse_scaled_dot_product_attention(*args, **kwargs):
         3: ['q', 'k', 'v']
     }
     num_all_args = len(args) + len(kwargs)
+    print(f"sparse_scaled_dot_product_attention: num_all_args = {num_all_args}, len(args) = {len(args)} ...")
+
     assert num_all_args in arg_names_dict, f"Invalid number of arguments, got {num_all_args}, expected 1, 2, or 3"
     for key in arg_names_dict[num_all_args][len(args):]:
         assert key in kwargs, f"Missing argument {key}"

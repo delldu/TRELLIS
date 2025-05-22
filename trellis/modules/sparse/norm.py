@@ -58,7 +58,6 @@ class SparseLayerNorm(nn.LayerNorm):
         bfeats = bfeats.permute(1, 0).reshape(1, input.shape[1], -1)
         bfeats = super().forward(bfeats)
         bfeats = bfeats.reshape(input.shape[1], -1).permute(1, 0)
-
         return input.replace(bfeats)
 
 

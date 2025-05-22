@@ -150,7 +150,11 @@ class SparseSubdivide(nn.Module):
         new_feats = input.feats.unsqueeze(1).expand(input.feats.shape[0], factor, *input.feats.shape[1:])
         # tensor [new_feats] size: [14955, 8, 768], min: -0.278465, max: 8.002379, mean: 0.094177
 
+        # new_feats.size() -- [14955, 8, 768] --> [119640, 768]
+        # new_coords.size() -- [14955, 8, 4] --> [119640, 4]
+        # input.shape -- [1, 768]
         out = SparseTensor(new_feats.flatten(0, 1), new_coords.flatten(0, 1), input.shape)
+        
         out._scale = input._scale * 2
         out._spatial_cache = input._spatial_cache
 
