@@ -58,7 +58,7 @@ class MultiHeadAttention(nn.Module):
         assert self.head_dim == 64
 
         self.ctx_channels = ctx_channels if ctx_channels is not None else channels
-        assert self.ctx_channels == channels # xxxx_3333
+        assert self.ctx_channels == channels
 
         self.num_heads = num_heads
         self._type = type

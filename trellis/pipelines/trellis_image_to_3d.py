@@ -289,11 +289,7 @@ class TrellisImageTo3DPipeline(Pipeline):
         # sampler_params = {}
         # ----------------------------------------------------------------------
         flow_model = self.load_model('slat_flow_model') # SLatFlowModel
-        # xxxx_8888
-        # noise = sp.SparseTensor(
-        #     feats=torch.randn(coords.shape[0], flow_model.in_channels).to(flow_model.device), # (14955, 8)
-        #     coords=coords,
-        # )
+
         noise = sp.SparseTensor(
             torch.randn(coords.shape[0], flow_model.in_channels).to(flow_model.device), # feats -- (14955, 8)
             coords,

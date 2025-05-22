@@ -4,8 +4,6 @@ __attributes = {
     'SparseStructure': 'sparse_structure',
     
     'SparseFeat2Render': 'sparse_feat2render',
-    'SLat2Render':'structured_latent2render',
-    'Slat2RenderGeo':'structured_latent2render',
     
     'SparseStructureLatent': 'sparse_structure_latent',
     'TextConditionedSparseStructureLatent': 'sparse_structure_latent',

@@ -49,7 +49,7 @@ class SparseTransformerBase(nn.Module):
 
         # assert in_channels == 8
         # assert model_channels == 768
-        # assert num_blocks == 12
+        assert num_blocks == 12
         # assert num_heads == 12
         assert num_head_channels == 64
         assert mlp_ratio == 4
@@ -88,8 +88,10 @@ class SparseTransformerBase(nn.Module):
             for attn_mode, window_size, shift_sequence, shift_window, serialize_mode in block_attn_config(self)
         ])
 
-        for attn_mode, window_size, shift_sequence, shift_window, serialize_mode in block_attn_config(self):
-            print(attn_mode, window_size, shift_sequence, shift_window, serialize_mode)
+        # for attn_mode, window_size, shift_sequence, shift_window, serialize_mode in block_attn_config(self):
+        #     print(attn_mode, window_size, shift_sequence, shift_window, serialize_mode)
+        # windowed 8 None 0 None
+        # windowed 8 None 4 None
 
     @property
     def device(self) -> torch.device:
@@ -111,7 +113,6 @@ class SparseTransformerBase(nn.Module):
         self.blocks.apply(convert_module_to_f32)
 
     def forward(self, x: sp.SparseTensor) -> sp.SparseTensor:
-        # ==> pdb.set_trace()
         h2 = self.input_layer.float()(x)
         if self.pe_mode == "ape": # True
             h2 = h2 + self.pos_embedder(x.coords[:, 1:])

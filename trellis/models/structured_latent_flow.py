@@ -42,12 +42,10 @@ class SparseResBlock3d(nn.Module):
             if channels != self.out_channels else nn.Identity()
         self.updown = None
 
-        # xxxx_3333
         if self.downsample:
             self.updown = sp.SparseDownsample(2)
         elif self.upsample:
             self.updown = sp.SparseUpsample(2)
-        # pdb.set_trace()
 
     def _updown(self, x: sp.SparseTensor) -> sp.SparseTensor:
         if self.updown is not None:
@@ -238,7 +236,6 @@ class SLatFlowModel(nn.Module):
         self.blocks.apply(convert_module_to_f32)
         self.out_blocks.apply(convert_module_to_f32)
 
-    # xxxx_debug
     def forward(self, x: sp.SparseTensor, t: torch.Tensor, cond: torch.Tensor) -> sp.SparseTensor:
         # tensor [x data.coords] size: [14955, 4], min: 0.0, max: 63.0, mean: 23.262018
         # tensor [x data.features] size: [14955, 8], min: -4.452163, max: 4.218491, mean: -0.000569

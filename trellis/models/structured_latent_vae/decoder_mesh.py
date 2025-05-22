@@ -106,7 +106,6 @@ class SLatMeshDecoder(SparseTransformerBase):
         assert use_fp16 == True
         assert qk_rms_norm == False
 
-        # xxxx_3333
         self.mesh_extractor = SparseFeatures2Mesh(res=resolution*4, use_color=True)
         self.out_channels = self.mesh_extractor.feats_channels
 
@@ -161,6 +160,7 @@ class SLatMeshDecoder(SparseTransformerBase):
         # tensor [x data.coords] size: [14955, 4], min: 0.0, max: 63.0, mean: 23.262018
         # tensor [x data.features] size: [14955, 8], min: -9.592283, max: 9.934357, mean: -0.068937
 
+        # xxxx_5555
         h2 = super().forward(x)
 
         for block in self.upsample: # SparseSubdivideBlock3d

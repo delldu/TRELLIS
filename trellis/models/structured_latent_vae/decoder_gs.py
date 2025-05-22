@@ -39,7 +39,6 @@ class SLatGaussianDecoder(SparseTransformerBase):
             use_fp16=use_fp16,
             qk_rms_norm=qk_rms_norm,
         )
-        # print(f"SLatGaussianDecoder: resolution={resolution}, model_channels={model_channels}, latent_channels={latent_channels}, num_blocks={num_blocks}, num_heads={num_heads}, attn_mode={attn_mode}, window_size={window_size}, qk_rms_norm={qk_rms_norm}")
         # SLatGaussianDecoder: resolution=64, model_channels=768, latent_channels=8, num_blocks=12, num_heads=12, attn_mode=swin, window_size=8, qk_rms_norm=False
 
         assert resolution == 64
@@ -164,6 +163,7 @@ class SLatGaussianDecoder(SparseTransformerBase):
     def forward(self, x: sp.SparseTensor) -> List[Gaussian]:
         # tensor [x data.indices] size: [14955, 4], min: 0.0, max: 63.0, mean: 23.262018
         # tensor [x data.features] size: [14955, 8], min: -9.592283, max: 9.934357, mean: -0.068937
+        # xxxx_5555
         h2 = super().forward(x)
         h2 = h2.type(x.dtype)
         h2 = h2.replace(F.layer_norm(h2.feats, h2.feats.shape[-1:]))

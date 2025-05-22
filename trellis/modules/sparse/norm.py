@@ -1,5 +1,7 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
+
 from . import SparseTensor
 import pdb
 
@@ -15,7 +17,8 @@ class SparseGroupNorm(nn.GroupNorm):
     def forward(self, input: SparseTensor) -> SparseTensor:
         bfeats = input.feats
         bfeats = bfeats.permute(1, 0).reshape(1, input.shape[1], -1)
-        bfeats = super().forward(bfeats)
+        # bfeats = super().forward(bfeats)
+        bfeats = F.group_norm(bfeats, self.num_groups, self.weight, self.bias, self.eps)
         bfeats = bfeats.reshape(input.shape[1], -1).permute(1, 0)
         return input.replace(bfeats)
 
@@ -27,7 +30,8 @@ class SparseLayerNorm(nn.LayerNorm):
     def forward(self, input: SparseTensor) -> SparseTensor:
         bfeats = input.feats
         bfeats = bfeats.permute(1, 0).reshape(1, input.shape[1], -1)
-        bfeats = super().forward(bfeats)
+        # bfeats = super().forward(bfeats)
+        bfeats = F.layer_norm(bfeats, self.normalized_shape, self.weight, self.bias, self.eps)
         bfeats = bfeats.reshape(input.shape[1], -1).permute(1, 0)
         return input.replace(bfeats)
 

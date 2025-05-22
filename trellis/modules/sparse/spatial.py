@@ -75,7 +75,6 @@ class SparseDownsample(nn.Module):
         # tensor [new_feats] size: [3185, 128], min: -7.777344, max: 2.693359, mean: -0.022208
         # tensor [new_coords] size: [3185, 4], min: 0.0, max: 31.0, mean: 11.572449
 
-        # xxxx_3333
         out = SparseTensor(new_feats, new_coords, input.shape,) # input.shape -- [1, 128]
         out.scale = tuple([s // f for s, f in zip(input.scale, factor)]) # input.scale --- (1, 1, 1)
         out.spatial_cache = input.spatial_cache
@@ -105,7 +104,6 @@ class SparseUpsample(nn.Module):
         factor = (self.factor,) * DIM
         assert factor == (2, 2, 2)
 
-        # xxxx_3333
         new_coords = input.get_spatial_cache(f'upsample_{factor}_coords')
         idx = input.get_spatial_cache(f'upsample_{factor}_idx') # idx.size() -- [14955]
 
@@ -114,7 +112,6 @@ class SparseUpsample(nn.Module):
         # tensor [new_feats] size: [14955, 2048], min: -600.0, max: 91.5, mean: -0.087899
         # (Pdb) input.shape -- [1, 2048]
 
-        # xxxx_3333
         out = SparseTensor(new_feats, new_coords, input.shape)
         out.scale = tuple([s * f for s, f in zip(input.scale, factor)])
         out.spatial_cache = input.spatial_cache

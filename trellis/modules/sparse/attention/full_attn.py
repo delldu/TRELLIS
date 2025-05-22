@@ -24,7 +24,7 @@ def sparse_scaled_dot_product_attention(*args):
         device = qkv.device
 
         s = qkv
-        q_seqlen = [qkv.coords.size(0) for i in range(qkv.shape[0])] # xxxx_3333
+        q_seqlen = [qkv.coords.size(0) for i in range(qkv.shape[0])]
         kv_seqlen = q_seqlen
         qkv = qkv.feats     # [T, 3, H, C]
         q, k, v = qkv.unbind(dim=1)
@@ -39,7 +39,7 @@ def sparse_scaled_dot_product_attention(*args):
 
         assert len(q.shape) == 3
         s = q
-        q_seqlen = [q.coords.size(0) for i in range(q.shape[0])] # xxxx_3333
+        q_seqlen = [q.coords.size(0) for i in range(q.shape[0])]
         q = q.feats     # [T_Q, H, C]
 
         assert len(kv.shape) == 5

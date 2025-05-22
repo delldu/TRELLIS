@@ -38,7 +38,6 @@ class SLatRadianceFieldDecoder(SparseTransformerBase):
             use_fp16=use_fp16,
             qk_rms_norm=qk_rms_norm,
         )
-        # xxxx_debug
         # assert resolution == 64
         # assert model_channels == 768
         # assert latent_channels == 8

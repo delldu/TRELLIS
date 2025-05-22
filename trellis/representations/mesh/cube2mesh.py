@@ -5,7 +5,6 @@ from .utils_cube import *
 from .flexicubes.flexicubes import FlexiCubes
 import pdb
 
-# xxxx_3333
 class MeshExtractResult:
     def __init__(self,
         vertices,
