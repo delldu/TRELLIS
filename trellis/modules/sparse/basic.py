@@ -32,7 +32,7 @@ class SparseTensor:
 
         # assert method_id == 0 or 1
         if method_id == 0:
-            feats, coords, shape, layout = args + (None,) * (4 - len(args)) # (None, None, None, None)
+            feats, coords, shape, scale, spatial_cache = args + (None,) * (5 - len(args)) # (None, None, None, None, None)
             # SparseTensor: args=(tensor([[ 7.917969,  8.007812,  0.144531,  ...,  ]]), tensor([[  0,   6,  60, 104], ...,
             #         [  0, 119,  67, 117]], dtype=torch.int32), torch.Size([1, 768])), kwargs=dict_keys([])
             # ----------------------------------------------------------------------------------------------
@@ -41,25 +41,28 @@ class SparseTensor:
 
             # xxxx_8888
             if 'feats' in kwargs: # True | False
-                # ==> pdb.set_trace()
+                pdb.set_trace()
                 feats = kwargs['feats']
                 del kwargs['feats']
             if 'coords' in kwargs: # True | False
+                pdb.set_trace()
                 coords = kwargs['coords']
                 del kwargs['coords']
 
             # xxxx_8888
             if shape is None: # False | True
                 shape = self.__cal_shape(feats, coords)
-            else:
-                pass #pdb.set_trace()
+            if scale is None:
+                scale = (1, 1, 1)
+            if spatial_cache is None:
+                spatial_cache = {}
 
             spatial_shape = (coords.max(0)[0][1:] + 1).tolist() # xxxx_3333
             # self.data = SparseConvTensor(feats.reshape(feats.shape[0], -1), coords, spatial_shape, shape[0], **kwargs)
             # self.data._features = feats
             # pdb.set_trace()
 
-            self.data = SparseConvTensor(feats, coords, spatial_shape, shape[0]) #  shape[0] -- batch_size
+            self.data = SparseConvTensor(feats.reshape(feats.shape[0], -1), coords, spatial_shape, shape[0]) #  shape[0] -- batch_size
 
         elif method_id == 1: # SparseConvTensor
             # SparseTensor: args=(SparseConvTensor[shape=torch.Size([119640, 768])],), 
@@ -79,8 +82,8 @@ class SparseTensor:
                 pass # pdb.set_trace()
 
         self._shape = shape
-        self._scale = kwargs.get('scale', (1, 1, 1))
-        self._spatial_cache = kwargs.get('spatial_cache', {})
+        self._scale = scale #kwargs.get('scale', (1, 1, 1))
+        self._spatial_cache = spatial_cache #kwargs.get('spatial_cache', {})
 
     def __cal_shape(self, feats, coords):
         # (Pdb) coords.size() -- [14955, 4], feats.size() -- [14955, 8]
@@ -179,33 +182,44 @@ class SparseTensor:
         #     self.data.spatial_shape,
         #     self.data.batch_size,
         # )
-        new_data = SparseConvTensor(
-            self.data.features.reshape(self.data.features.shape[0], -1),
-            self.data.indices,
-            self.data.spatial_shape,
-            self.data.batch_size,
-        )
 
-        assert self.data.batch_size == 1
-        new_data._features = feats # !!! import !!!
-        # new_data.benchmark = self.data.benchmark
-        # new_data.benchmark_record = self.data.benchmark_record
-        # new_data.thrust_allocator = self.data.thrust_allocator
-        # new_data._timer = self.data._timer
-        # new_data.force_algo = self.data.force_algo
-        # new_data.int8_scale = self.data.int8_scale
-        if coords is not None:
-            # ==> pdb.set_trace()
-            new_data.indices = coords
+        # # xxxx_8888
+        # new_data = SparseConvTensor(
+        #     self.data.features.reshape(self.data.features.shape[0], -1),
+        #     self.data.indices,
+        #     self.data.spatial_shape,
+        #     self.data.batch_size,
+        # )
+
+        # assert self.data.batch_size == 1
+        # # new_data._features = feats # !!! import !!!
+        # # new_data.benchmark = self.data.benchmark
+        # # new_data.benchmark_record = self.data.benchmark_record
+        # # new_data.thrust_allocator = self.data.thrust_allocator
+        # # new_data._timer = self.data._timer
+        # # new_data.force_algo = self.data.force_algo
+        # # new_data.int8_scale = self.data.int8_scale
+        # if coords is not None:
+        #     # ==> pdb.set_trace()
+        #     new_data.indices = coords
+        # else:
+        #     pass #pdb.set_trace()
+
+        # # xxxx_3333
+        # new_tensor = SparseTensor(new_data, shape=torch.Size(new_shape), 
+        #     scale=self._scale, 
+        #     spatial_cache=self._spatial_cache,
+        # )
+        # new_tensor.data._features = feats # !!! import !!!
+
+        if coords is None:
+            new_coords = self.coords
         else:
-            pass #pdb.set_trace()
+            new_coords = coords
 
-        # xxxx_3333
-        # new_tensor = SparseTensor(new_data.features, new_data.indices, shape=torch.Size(new_shape), 
-        new_tensor = SparseTensor(new_data, shape=torch.Size(new_shape), 
-            scale=self._scale, 
-            spatial_cache=self._spatial_cache,
-        )
+        new_tensor = SparseTensor(feats, new_coords, torch.Size(new_shape), self._scale, self._spatial_cache)
+        new_tensor.data._features = feats # !!! import !!!
+
         return new_tensor
 
         # if coords is None:
